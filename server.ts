@@ -404,6 +404,17 @@ app.get("/api/work-orders/:id", (req, res) => {
   res.json(wo);
 });
 
+app.post("/api/work-orders/:id/status", (req, res) => {
+  const { status } = req.body;
+  const workOrders = JSONDB.get("workOrders");
+  const idx = workOrders.findIndex((w) => w.WorkOrderId === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Work Order not found." });
+
+  workOrders[idx].Status = status;
+  JSONDB.set("workOrders", workOrders);
+  res.json(workOrders[idx]);
+});
+
 app.post("/api/work-orders", (req, res) => {
   const { ProcessId, SubcontractorId, MaterialDetails, TotalQuantity, Unit, ExpectedReturnDate, CreatedBy } = req.body;
   if (!ProcessId || !SubcontractorId || !MaterialDetails || !TotalQuantity) {
@@ -869,36 +880,107 @@ app.get("/api/return/history", (req, res) => {
   res.json(returnPickups);
 });
 
+app.post("/api/return/create", (req, res) => {
+  const { WorkOrderId } = req.body;
+  const workOrders = JSONDB.get("workOrders");
+  const woIdx = workOrders.findIndex((w) => w.WorkOrderId === WorkOrderId);
+  if (woIdx === -1) return res.status(404).json({ error: "Work order not found." });
+
+  workOrders[woIdx].Status = "4.6_ReadyForPickup";
+  JSONDB.set("workOrders", workOrders);
+
+  const returnPickups = JSONDB.get("returnPickups");
+  const pickupOTP = Math.floor(100000 + Math.random() * 900000).toString();
+
+  const newReturn = {
+    ReturnId: `ret-${generateId()}`,
+    WorkOrderId,
+    DriverId: "",
+    VehicleNumber: "",
+    PickupDate: "",
+    ReturnQuantity: workOrders[woIdx].TotalQuantity,
+    Status: "PendingAssignment",
+    PickupOTP: pickupOTP
+  };
+  returnPickups.push(newReturn);
+  JSONDB.set("returnPickups", returnPickups);
+
+  // Email Subcontractor the Pickup OTP
+  const subcontractors = JSONDB.get("subcontractors");
+  const sub = subcontractors.find((s) => s.SubcontractorId === workOrders[woIdx].SubcontractorId);
+  if (sub) {
+    sendSimulatedEmail(
+      WorkOrderId,
+      sub.Email,
+      `Return Material Pickup Requested - ${workOrders[woIdx].WorkOrderCode}`,
+      `A pickup request has been created to collect materials.\nPlease provide this Pickup OTP to the driver when they arrive: ${pickupOTP}`
+    );
+  }
+
+  res.json(newReturn);
+});
+
 app.post("/api/return/assign-driver", (req, res) => {
-  const { WorkOrderId, DriverId } = req.body;
+  const { WorkOrderId, DriverId, VehicleNumber } = req.body;
   const returnPickups = JSONDB.get("returnPickups");
   const idx = returnPickups.findIndex((r) => r.WorkOrderId === WorkOrderId);
   
+  const goodsReceiptOTP = Math.floor(100000 + Math.random() * 900000).toString();
+
   if (idx !== -1) {
     returnPickups[idx].DriverId = DriverId;
-    returnPickups[idx].PickupDate = new Date().toISOString();
+    returnPickups[idx].VehicleNumber = VehicleNumber || "N/A";
+    returnPickups[idx].Status = "Assigned";
+    returnPickups[idx].GoodsReceiptOTP = goodsReceiptOTP;
     JSONDB.set("returnPickups", returnPickups);
   } else {
+    const pickupOTP = Math.floor(100000 + Math.random() * 900000).toString();
     returnPickups.push({
       ReturnId: `ret-${generateId()}`,
       WorkOrderId,
       DriverId,
-      PickupDate: new Date().toISOString(),
+      VehicleNumber: VehicleNumber || "N/A",
+      Status: "Assigned",
+      PickupOTP: pickupOTP,
+      GoodsReceiptOTP: goodsReceiptOTP,
       ReturnQuantity: 500 // placeholder
     });
     JSONDB.set("returnPickups", returnPickups);
   }
+
+  // Update WO status
+  const workOrders = JSONDB.get("workOrders");
+  const woIdx = workOrders.findIndex(w => w.WorkOrderId === WorkOrderId);
+  if (woIdx !== -1) {
+    workOrders[woIdx].Status = "4.7_ReturnDriverAssigned";
+    JSONDB.set("workOrders", workOrders);
+  }
+  
+  // Notify driver with Goods Receipt OTP
+  addSystemNotification(
+    DriverId,
+    "🚚 Return Pickup Assigned",
+    `Pickup OTP will be provided by subcontractor. Your Goods Receipt OTP (give to Store Owner on arrival) is ${goodsReceiptOTP}.`,
+    "DELIVERY",
+    `/driver/my-deliveries`
+  );
 
   res.json({ success: true });
 });
 
 // Subcontractor hands over returned material to driver
 app.post("/api/return/:id/pickup-confirm", (req, res) => {
+  const { otp } = req.body;
   const returnPickups = JSONDB.get("returnPickups");
   const idx = returnPickups.findIndex((r) => r.ReturnId === req.params.id);
   if (idx === -1) return res.status(404).json({ error: "Return ledger not found." });
 
+  if (returnPickups[idx].PickupOTP && returnPickups[idx].PickupOTP !== otp) {
+    return res.status(400).json({ error: "Incorrect Pickup OTP." });
+  }
+
   returnPickups[idx].PickupDate = new Date().toISOString();
+  returnPickups[idx].Status = "InTransit";
   JSONDB.set("returnPickups", returnPickups);
 
   // Update Work Order status (status 5)
@@ -937,28 +1019,32 @@ app.post("/api/return/:id/received-at-company", (req, res) => {
 
 // Final verify closure of return order
 app.post("/api/return/:id/company-otp-confirm", (req, res) => {
+  const { otp } = req.body;
   const returnPickups = JSONDB.get("returnPickups");
   const idx = returnPickups.findIndex((r) => r.ReturnId === req.params.id);
   if (idx === -1) return res.status(404).json({ error: "Return records not found." });
 
   const ret = returnPickups[idx];
+
+  if (ret.GoodsReceiptOTP && ret.GoodsReceiptOTP !== otp) {
+    return res.status(400).json({ error: "Incorrect Goods Receipt OTP." });
+  }
+
+  ret.ReturnedAt = new Date().toISOString();
+  ret.Status = "Received";
+  JSONDB.set("returnPickups", returnPickups);
   
-  // Close Work order complete (status 7)
+  // Set Work Order to 6_ReceivedAtCompanyStore
   const workOrders = JSONDB.get("workOrders");
   const woIdx = workOrders.findIndex((w) => w.WorkOrderId === ret.WorkOrderId);
   if (woIdx !== -1) {
-    workOrders[woIdx].Status = "7_Completed";
+    workOrders[woIdx].Status = "6_ReceivedAtCompanyStore";
     workOrders[woIdx].ActualReturnDate = new Date().toISOString();
     JSONDB.set("workOrders", workOrders);
 
     // Return materials into stock list
     const processes = JSONDB.get("processes");
     const proc = processes.find((p) => p.ProcessId === workOrders[woIdx].ProcessId);
-    if (proc) {
-      proc.Status = "Completed";
-      JSONDB.set("processes", processes);
-    }
-
     // Prepare transaction journal for the returns
     const inventory = JSONDB.get("inventory");
     const transactions = JSONDB.get("transactions");

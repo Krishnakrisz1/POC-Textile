@@ -1696,6 +1696,31 @@ function ProcessOwnerDashboard({ processes, subcontractors, workOrders, currentU
                             </button>
                           )}
 
+                          {wo.Status === "4.5_ProcessCompleted" && (
+                            <button
+                              onClick={async () => {
+                                await fetch("/api/return/create", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ WorkOrderId: wo.WorkOrderId })
+                                });
+                                window.location.reload();
+                              }}
+                              className="rounded bg-slate-900 hover:bg-slate-800 text-white font-bold py-1 px-2.5 text-[10px] cursor-pointer"
+                            >
+                              Create Material Pickup Request
+                            </button>
+                          )}
+
+                          {wo.Status === "6_ReceivedAtCompanyStore" && (
+                            <button
+                              onClick={() => onUpdateStatus(wo.WorkOrderId, "7_Completed")}
+                              className="rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1 px-3 text-[10px] cursor-pointer shadow-md"
+                            >
+                              Close Process (Finalize)
+                            </button>
+                          )}
+
                           {wo.Status !== "7_Completed" && wo.Status !== "PulledBack" && (
                             <button
                               onClick={() => {
@@ -2092,30 +2117,70 @@ function InventoryOwnerDashboard({ workOrders, inventory, users, onPrepareDispat
                     </div>
 
                     <div>
-                      {!ret.ReturnedAt ? (
-                        <button
-                          onClick={() => onAcknowledgeReceived(ret.ReturnId)}
-                          className="rounded-lg bg-indigo-600 hover:bg-indigo-700 font-bold text-white px-3.5 py-2 cursor-pointer"
-                        >
-                          Step 1: Confirm Store Handover arrival
-                        </button>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 text-emerald-800 rounded px-2.5 py-1 font-bold">
-                          Arrived & store-checked
-                        </span>
-                      )}
-                    </div>
-
-                    <div>
-                      {ret.ReturnedAt && !wo?.ActualReturnDate && (
+                      {ret.Status === "PendingAssignment" && (
                         <div className="space-y-2">
-                          <p className="text-[10px] text-slate-450 uppercase tracking-wider font-bold">Step 2: Sign-off Handover release:</p>
-                          <button
-                            onClick={() => onCompanyOTPConfirm(ret.ReturnId)}
-                            className="bg-slate-950 text-white font-bold py-2 px-4 rounded-xl hover:bg-slate-850 cursor-pointer w-full text-center"
-                          >
-                            Close Work Order (Issue completion logs)
-                          </button>
+                          <p className="text-[10px] text-slate-450 uppercase tracking-wider font-bold">Step 1: Assign Driver for Pickup</p>
+                          <div className="flex flex-col gap-2">
+                            <select
+                               className="bg-white border border-slate-205 rounded px-2 py-1.5 text-[11px]"
+                               value={selectedDriver[ret.ReturnId] || "user-9"}
+                               onChange={(e) => setSelectedDriver({ ...selectedDriver, [ret.ReturnId]: e.target.value })}
+                            >
+                               <option value="user-9">Venkatesh Porter (TN 38 AB 1111)</option>
+                            </select>
+                            <button
+                              onClick={async () => {
+                                const dId = selectedDriver[ret.ReturnId] || "user-9";
+                                const vNum = "TN 38 AB 1111"; // simplified
+                                await fetch("/api/return/assign-driver", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ WorkOrderId: ret.WorkOrderId, DriverId: dId, VehicleNumber: vNum })
+                                });
+                                fetchDispatches();
+                              }}
+                              className="rounded-lg bg-indigo-600 hover:bg-indigo-700 font-bold text-white px-3.5 py-2 cursor-pointer"
+                            >
+                              Assign Driver
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {(ret.Status === "Assigned" || ret.Status === "InTransit") && wo?.Status !== "7_Completed" && (
+                        <div className="space-y-2">
+                           <p className="text-[10px] text-slate-450 uppercase tracking-wider font-bold">Step 2: Verify Goods Receipt OTP</p>
+                           <div className="flex flex-col gap-2">
+                              <input 
+                                type="text"
+                                placeholder="Enter Driver's Receipt OTP"
+                                value={simulatedOTPInput[ret.ReturnId] || ""}
+                                onChange={(e) => setSimulatedOTPInput({...simulatedOTPInput, [ret.ReturnId]: e.target.value})}
+                                className="bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-center font-bold"
+                              />
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const res = await fetch("/api/return/" + ret.ReturnId + "/company-otp-confirm", {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ otp: simulatedOTPInput[ret.ReturnId] })
+                                    });
+                                    if (!res.ok) {
+                                       const err = await res.json();
+                                       alert(err.error);
+                                    } else {
+                                       fetchDispatches();
+                                    }
+                                  } catch (e) {
+                                     console.error(e);
+                                  }
+                                }}
+                                className="bg-slate-950 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-850 cursor-pointer"
+                              >
+                                Verify & Close Order
+                              </button>
+                           </div>
                         </div>
                       )}
                     </div>
@@ -2319,12 +2384,23 @@ interface DriverProps {
 
 function DriverDashboard({ currentUser, onVerifyDeliveryOTP, onUpdateLocation }: DriverProps) {
   const [deliveries, setDeliveries] = useState<any[]>([]);
+  const [returnRuns, setReturnRuns] = useState<any[]>([]);
+  const [workOrders, setWorkOrders] = useState<any[]>([]);
   const [otpVal, setOTPVal] = useState<Record<string, string>>({});
 
   const listMyRuns = async () => {
     try {
       const res = await fetch("/api/driver/my-deliveries?driverId=" + currentUser.id);
       if (res.ok) setDeliveries(await res.json());
+
+      const woRes = await fetch("/api/work-orders");
+      if (woRes.ok) setWorkOrders(await woRes.json());
+
+      const retRes = await fetch("/api/return/history");
+      if (retRes.ok) {
+        const allRet = await retRes.json();
+        setReturnRuns(allRet.filter((r: any) => r.DriverId === currentUser.id));
+      }
     } catch (e) {
       console.error(e);
     }
@@ -2420,6 +2496,87 @@ function DriverDashboard({ currentUser, onVerifyDeliveryOTP, onUpdateLocation }:
                   </div>
                 )}
 
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="font-bold text-slate-800 uppercase tracking-widest text-xs">Return Pickups ({returnRuns.length})</h3>
+        {returnRuns.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-150 p-6 text-center text-slate-500">
+            No return pickups assigned.
+          </div>
+        ) : (
+          returnRuns.map((ret) => {
+            const wo = workOrders.find(w => w.WorkOrderId === ret.WorkOrderId);
+            if (!wo) return null;
+
+            return (
+              <div key={ret.ReturnId} className="bg-white rounded-2xl border border-slate-150 p-5 shadow-sm space-y-4">
+                <div className="flex justify-between items-start border-b border-slate-50 pb-3">
+                  <div>
+                    <span className="font-extrabold text-slate-900 font-mono text-sm uppercase">{wo.WorkOrderCode}</span>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Type: Return Pickup</p>
+                  </div>
+                  <span className={`text-[10px] font-bold uppercase rounded px-2.5 py-0.5 ${wo.Status === "7_Completed" || ret.PickupDate ? "bg-indigo-100 text-indigo-800" : "bg-emerald-100 text-emerald-800"
+                    }`}>
+                    {ret.Status}
+                  </span>
+                </div>
+
+                {ret.Status === "Assigned" && (
+                  <div className="border-t border-slate-50 pt-4 space-y-3">
+                    <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-4">
+                      <h4 className="font-bold text-emerald-900 flex items-center gap-1">
+                        <ShieldCheck className="h-4.5 w-4.5 text-emerald-700" />
+                        Subcontractor Handover Pickup Check:
+                      </h4>
+                      <p className="text-[10px] text-emerald-800 mt-1 mb-3">
+                        Enter the Pickup OTP provided by the Subcontractor to authenticate the material handover.
+                      </p>
+
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="6-Digit Pickup OTP"
+                          value={otpVal[ret.ReturnId] || ""}
+                          onChange={(e) => setOTPVal({ ...otpVal, [ret.ReturnId]: e.target.value })}
+                          className="bg-white border rounded px-3 py-2 text-center text-sm font-bold w-full focus:outline-none focus:ring-2 focus:ring-slate-900"
+                        />
+                        <button
+                          onClick={async () => {
+                             try {
+                               const res = await fetch("/api/return/" + ret.ReturnId + "/pickup-confirm", {
+                                 method: "POST",
+                                 headers: {"Content-Type": "application/json"},
+                                 body: JSON.stringify({ otp: otpVal[ret.ReturnId] })
+                               });
+                               if (!res.ok) {
+                                  const err = await res.json();
+                                  alert(err.error);
+                               } else {
+                                  listMyRuns();
+                               }
+                             } catch(e) {
+                               console.error(e);
+                             }
+                          }}
+                          className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 transition-all cursor-pointer"
+                        >
+                          Verify Pickup
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {ret.Status === "InTransit" && (
+                  <div className="bg-slate-50 text-slate-700 p-3 rounded-xl border border-slate-200 mt-4">
+                    <p className="font-bold text-xs mb-1">Status: In Transit to Company Store</p>
+                    <p>Drive safely. When you arrive, provide your Goods Receipt OTP: <span className="font-mono text-emerald-600 font-bold ml-1">{ret.GoodsReceiptOTP}</span></p>
+                  </div>
+                )}
               </div>
             );
           })
