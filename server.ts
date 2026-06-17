@@ -686,6 +686,19 @@ app.get("/api/driver/my-deliveries", (req, res) => {
   res.json(results);
 });
 
+app.get("/api/dispatches", (req, res) => {
+  const dispatches = JSONDB.get("dispatches");
+  const workOrders = JSONDB.get("workOrders");
+  const results = dispatches.map((d) => {
+    const wo = workOrders.find((w) => w.WorkOrderId === d.WorkOrderId);
+    return {
+      dispatch: d,
+      workOrder: wo
+    };
+  });
+  res.json(results);
+});
+
 // Verify Subcontractor Delivery OTP
 app.post("/api/delivery/:dispatchId/verify-otp", (req, res) => {
   const { otp } = req.body;
@@ -1090,6 +1103,11 @@ app.post("/api/notifications/read-all", (req, res) => {
 app.get("/api/system/emails", (req, res) => {
   const emailLogs = JSONDB.get("emailLogs");
   res.json(emailLogs);
+});
+
+app.post("/api/system/emails/clear", (req, res) => {
+  JSONDB.set("emailLogs", []);
+  res.json({ success: true });
 });
 
 app.get("/api/tracking/live-map", (req, res) => {
