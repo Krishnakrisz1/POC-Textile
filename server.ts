@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { JSONDB, User, Project, Process, Subcontractor, WorkOrder, MaterialDispatch, Delivery, ReturnPickup, OTPLog, EmailLog, InventoryItem, InventoryTransaction, TrackingEvent, PullBack, Notification } from "./src/server/db";
 
@@ -96,6 +97,21 @@ app.get("/api/users", (req, res) => {
     users = users.filter((u) => u.RoleCode === role);
   }
   res.json(users);
+});
+
+app.post("/api/reset", (req, res) => {
+  try {
+    const dbPath = path.join(process.cwd(), "db.json");
+    if (fs.existsSync(dbPath)) {
+      fs.unlinkSync(dbPath);
+    }
+    // Touch JSONDB to trigger recreation
+    JSONDB.get("users");
+    res.json({ success: true, message: "Database reset to mock defaults." });
+  } catch (error) {
+    console.error("Reset failed:", error);
+    res.status(500).json({ error: "Failed to reset database" });
+  }
 });
 
 app.post("/api/users", (req, res) => {
@@ -459,12 +475,13 @@ app.post("/api/dispatch/create", (req, res) => {
 });
 
 app.post("/api/dispatch/:id/assign-driver", (req, res) => {
-  const { DriverId } = req.body;
+  const { DriverId, VehicleNumber } = req.body;
   const dispatches = JSONDB.get("dispatches");
   const idx = dispatches.findIndex((d) => d.DispatchId === req.params.id);
   if (idx === -1) return res.status(404).json({ error: "Dispatch record not found." });
 
   dispatches[idx].DriverId = DriverId;
+  dispatches[idx].VehicleNumber = VehicleNumber || "N/A";
   
   // Auto-generate OTP
   const rawOTP = Math.floor(100000 + Math.random() * 900000).toString();

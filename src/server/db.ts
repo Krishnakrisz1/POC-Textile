@@ -87,6 +87,7 @@ export interface MaterialDispatch {
   WorkOrderId: string;
   InventoryOwnerId: string;
   DriverId: string;
+  VehicleNumber?: string;
   DispatchOTP: string;
   OTPExpiry: string;
   OTPVerifiedAt?: string;
@@ -278,7 +279,7 @@ export const INITIAL_DATABASE: DatabaseSchema = {
       CustomerName: "FabHome Decor Ltd",
       OrderInstruction: "300 thread count organic combed yarn weaving. Eco-friendly reactive bleaching only. Zero chemical emissions active.",
       AdminId: "user-2",
-      ProjectOwnerId: "user-4",
+      ProjectOwnerId: "user-3",
       Timeline: [
         { milestone: "Yarn Preparation", dueDate: "2026-06-20" },
         { milestone: "Knitting Weave", dueDate: "2026-07-05" },
@@ -385,6 +386,22 @@ export const INITIAL_DATABASE: DatabaseSchema = {
       ExpectedReturnDate: "2026-06-26",
       CreatedBy: "user-6",
       CreatedAt: "2026-06-12T09:30:00Z"
+    },
+    {
+      WorkOrderId: "wo-3",
+      WorkOrderCode: "WO-POLO-003",
+      ProcessId: "proc-3",
+      SubcontractorId: "sub-1",
+      MaterialDetails: [
+        { ItemId: "inv-1", ItemName: "Grey Yarn 40s combed", Quantity: 300, Unit: "kg" },
+        { ItemId: "inv-4", ItemName: "Cut Chest Panels Cotton", Quantity: 200, Unit: "pcs" }
+      ],
+      TotalQuantity: 500,
+      Unit: "mixed",
+      Status: "1_ToBeDispatched",
+      ExpectedReturnDate: "2026-06-25",
+      CreatedBy: "user-5",
+      CreatedAt: "2026-06-17T09:00:00Z"
     }
   ],
   dispatches: [
@@ -478,14 +495,15 @@ export class JSONDB {
   private static read(): DatabaseSchema {
     try {
       if (!fs.existsSync(DB_FILE_PATH)) {
-        fs.writeFileSync(DB_FILE_PATH, JSON.stringify(INITIAL_DATABASE, null, 2));
-        return INITIAL_DATABASE;
+        const seedCopy = JSON.parse(JSON.stringify(INITIAL_DATABASE));
+        fs.writeFileSync(DB_FILE_PATH, JSON.stringify(seedCopy, null, 2));
+        return seedCopy;
       }
       const data = fs.readFileSync(DB_FILE_PATH, "utf8");
       return JSON.parse(data);
     } catch (e) {
       console.error("Failed to read JSON DB, restoring seed", e);
-      return INITIAL_DATABASE;
+      return JSON.parse(JSON.stringify(INITIAL_DATABASE));
     }
   }
 
