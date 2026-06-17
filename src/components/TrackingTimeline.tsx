@@ -42,6 +42,7 @@ export default function TrackingTimeline({ workOrder, subcontractor, driver }: P
     { label: "In Transit", code: "2_InTransit_ToSubcontractor", desc: "Dispatched with porter driver" },
     { label: "Delivered", code: "3_ReceivedBySubcontractor", desc: "Received at sub-factory" },
     { label: "Processing", code: "4_InProcessAtSubcontractor", desc: "Work in active production" },
+    { label: "Process Completed", code: "4.5_ProcessCompleted", desc: "Production finished, ready for return" },
     { label: "Return Transit", code: "5_ReturnInTransit", desc: "Returning to company" },
     { label: "At Store", code: "6_ReceivedAtCompanyStore", desc: "Pending store receipt check" },
     { label: "Completed", code: "7_Completed", desc: "Cleared & Complete" }
@@ -50,7 +51,7 @@ export default function TrackingTimeline({ workOrder, subcontractor, driver }: P
   // Determine current active step index
   const getCurrentStepIndex = () => {
     if (workOrder.Status === "PulledBack") return -1;
-    if (workOrder.Status === "Closed") return 6;
+    if (workOrder.Status === "Closed") return steps.length - 1;
     return steps.findIndex((s) => s.code === workOrder.Status);
   };
 
@@ -72,7 +73,7 @@ export default function TrackingTimeline({ workOrder, subcontractor, driver }: P
       progressPercentage = 30;
     }
     activeStatusLabel = "Vehicle Transit to Subcontractor Active";
-  } else if (workOrder.Status === "3_ReceivedBySubcontractor" || workOrder.Status === "4_InProcessAtSubcontractor") {
+  } else if (workOrder.Status === "3_ReceivedBySubcontractor" || workOrder.Status === "4_InProcessAtSubcontractor" || workOrder.Status === "4.5_ProcessCompleted") {
     progressPercentage = 100;
     activeStatusLabel = "Materials Handover Complete";
   } else if (workOrder.Status === "5_ReturnInTransit") {

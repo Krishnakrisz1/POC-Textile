@@ -10,18 +10,30 @@ import TrackingTimeline from "./components/TrackingTimeline";
 
 export default function App() {
   // Navigation State
-  const [currentPath, setCurrentPath] = useState<string>("/");
+  const [currentUser, setCurrentUser] = useState<User>(() => {
+    const saved = localStorage.getItem("textile_poc_user");
+    if (saved) return JSON.parse(saved);
+    return {
+      id: "user-1",
+      name: "Kalyan MD",
+      email: "krishnajayanth54@gmail.com",
+      phone: "+91 9443210123",
+      role: "SUPER_ADMIN",
+      roleName: "SuperAdmin (MD)"
+    };
+  });
+  const [currentPath, setCurrentPath] = useState(() => {
+    return localStorage.getItem("textile_poc_path") || "/";
+  });
   const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string | null>(null);
 
-  // Authentication Simulator State
-  const [currentUser, setCurrentUser] = useState<User>({
-    id: "user-1",
-    name: "Kalyan MD",
-    email: "krishnajayanth54@gmail.com",
-    phone: "+91 9443210123",
-    role: "SUPER_ADMIN",
-    roleName: "SuperAdmin (MD)"
-  });
+  useEffect(() => {
+    localStorage.setItem("textile_poc_user", JSON.stringify(currentUser));
+  }, [currentUser]);
+
+  useEffect(() => {
+    localStorage.setItem("textile_poc_path", currentPath);
+  }, [currentPath]);
 
   // Global Sync Status
   const [projects, setProjects] = useState<Project[]>([]);
@@ -59,7 +71,17 @@ export default function App() {
       if (subRes.ok) setSubcontractors(await subRes.json());
       if (woRes.ok) setWorkOrders(await woRes.json());
       if (invRes.ok) setInventory(await invRes.json());
-      if (userRes.ok) setAllUsers(await userRes.json());
+      if (userRes.ok) {
+        const use = await userRes.json();
+        setAllUsers(use.map((u: any) => ({
+          id: u.UserId || u.id,
+          name: u.Name || u.name,
+          email: u.Email || u.email,
+          phone: u.Phone || u.phone,
+          role: u.RoleCode || u.role,
+          roleName: u.RoleName || u.roleName
+        })));
+      }
     } catch (e) {
       console.error(e);
       setErrorText("Failed to establish server synchronization. Verify backend is active.");
@@ -382,6 +404,14 @@ export default function App() {
                   });
                   setSuccessText("Assigned driver for return pickup.");
                   setTimeout(() => setSuccessText(""), 3000);
+                  syncDatabase();
+                }}
+                onUpdateStatus={async (woId, status) => {
+                  await fetch("/api/work-orders/" + woId + "/status", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ status })
+                  });
                   syncDatabase();
                 }}
                 onViewWo={(woId) => {
@@ -1229,7 +1259,7 @@ function ProjectOwnerDashboard({ projects, processes, users, currentUser, onAckn
   };
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8">
       <div className="bg-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] opacity-25" />
         <span className="rounded-full bg-slate-800 border border-slate-700 px-3 py-1 text-xs text-indigo-400 font-mono uppercase font-bold">
@@ -1308,12 +1338,13 @@ function ProjectOwnerDashboard({ projects, processes, users, currentUser, onAckn
                           <p className="text-[11px] text-slate-500">Target duration: <span className="font-bold">{proc.ExpectedDeliveryDays} days</span></p>
 
                           <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                            <span className="text-[10px] text-slate-400">Owner Assigned: {proc.ProcessOwnerId === "user-5" ? "Arun Knitting" : "Karthik Dyeing"}</span>
+                            <span className="text-[10px] text-slate-400">Owner Assigned: {proc.ProcessOwnerId === "user-5" ? "Arun Knitting" : proc.ProcessOwnerId === "user-6" ? "Karthik Dyeing" : "Unassigned"}</span>
                             <button
+                              type="button"
                               onClick={() => setAssigningProcId(proc.ProcessId)}
                               className="text-[10px] text-indigo-650 hover:underline font-bold"
                             >
-                              Reassign Owner
+                              {proc.ProcessOwnerId ? "Reassign Owner" : "Assign Owner"}
                             </button>
                           </div>
                         </div>
@@ -1384,9 +1415,10 @@ interface ProcessOwnerProps {
   onPullBackOrder: (woId: string, data: any) => Promise<void>;
   onAssignReturnPickup: (woId: string, driverId: string) => Promise<void>;
   onViewWo: (woId: string) => void;
+  onUpdateStatus: (woId: string, status: string) => Promise<void>;
 }
 
-function ProcessOwnerDashboard({ processes, subcontractors, workOrders, currentUser, onStartProcess, onRaiseWorkOrder, onPullBackOrder, onAssignReturnPickup, onViewWo }: ProcessOwnerProps) {
+function ProcessOwnerDashboard({ processes, subcontractors, workOrders, currentUser, onStartProcess, onRaiseWorkOrder, onPullBackOrder, onAssignReturnPickup, onViewWo, onUpdateStatus }: ProcessOwnerProps) {
   const [activeProcessId, setActiveProcessId] = useState<string | null>(null);
   const [selectedSubId, setSelectedSubId] = useState("");
   const [matName, setMatName] = useState("Grey Yarn 40s combed");
@@ -1647,6 +1679,23 @@ function ProcessOwnerDashboard({ processes, subcontractors, workOrders, currentU
                             </button>
                           )}
 
+                          {wo.Status === "3_ReceivedBySubcontractor" && (
+                            <button
+                              onClick={() => onUpdateStatus(wo.WorkOrderId, "4_InProcessAtSubcontractor")}
+                              className="rounded border border-indigo-300 hover:bg-indigo-50 text-indigo-700 font-bold py-1 px-2.5 text-[10px] cursor-pointer"
+                            >
+                              Confirm Processing Started
+                            </button>
+                          )}
+                          {wo.Status === "4_InProcessAtSubcontractor" && (
+                            <button
+                              onClick={() => onUpdateStatus(wo.WorkOrderId, "4.5_ProcessCompleted")}
+                              className="rounded border border-emerald-300 hover:bg-emerald-50 text-emerald-700 font-bold py-1 px-2.5 text-[10px] cursor-pointer"
+                            >
+                              Mark Process Completed
+                            </button>
+                          )}
+
                           {wo.Status !== "7_Completed" && wo.Status !== "PulledBack" && (
                             <button
                               onClick={() => {
@@ -1749,8 +1798,6 @@ function ProcessOwnerDashboard({ processes, subcontractors, workOrders, currentU
                   className="w-full bg-slate-50 border border-slate-201 rounded-lg px-3 py-2 font-bold"
                 >
                   <option value="user-9">Venkatesh Porter (+91 9361112222)</option>
-                  <option value="user-10">Muthu Logistics (+91 9361113333)</option>
-                  <option value="user-11">Gopal Driver Logistics (+91 9361114444)</option>
                 </select>
               </div>
 
@@ -1814,7 +1861,7 @@ function InventoryOwnerDashboard({ workOrders, inventory, users, onPrepareDispat
 
   const fetchDispatches = async () => {
     try {
-      const res = await fetch("/api/driver/my-deliveries"); // Fetch all assigned
+      const res = await fetch("/api/dispatches"); // Fetch all dispatches for Store Owner dashboard
       if (res.ok) setDispatches(await res.json());
 
       const retRes = await fetch("/api/return/history");
@@ -2182,28 +2229,32 @@ function InventoryOwnerDashboard({ workOrders, inventory, users, onPrepareDispat
                               <label className="text-[10px] font-bold text-slate-500 uppercase">Driver Profile</label>
                               <select
                                 value={driverSelected}
-                                onChange={(e) => setSelectedDriver({ ...selectedDriver, [selectedModalOrder.WorkOrderId]: e.target.value })}
+                                onChange={(e) => {
+                                  const DRIVER_VEHICLES: Record<string, string> = {
+                                    "user-9": "TN 38 AB 1111"
+                                  };
+                                  setSelectedDriver({ ...selectedDriver, [selectedModalOrder.WorkOrderId]: e.target.value });
+                                  setVehicleNumber({ ...vehicleNumber, [selectedModalOrder.WorkOrderId]: DRIVER_VEHICLES[e.target.value] || "" });
+                                }}
                                 className="w-full bg-white border border-slate-205 rounded px-2.5 py-1.5 text-[11px] font-bold focus:ring-1 focus:ring-indigo-400 focus:outline-none"
                               >
-                                {users.filter(u => u.RoleCode === "PORTER_DRIVER" || u.role === "PORTER_DRIVER").map(u => (
-                                  <option key={u.id || u.UserId} value={u.id || u.UserId}>{u.name || u.Name}</option>
-                                ))}
+                                <option value="user-9">Venkatesh Porter (TN 38 AB 1111)</option>
                               </select>
                             </div>
                             <div className="space-y-1">
                               <label className="text-[10px] font-bold text-slate-500 uppercase">Vehicle License Plate</label>
                               <input
                                 type="text"
-                                placeholder="e.g. TN 39 CD 1234"
-                                value={vehicleNumber[selectedModalOrder.WorkOrderId] || ""}
-                                onChange={(e) => setVehicleNumber({ ...vehicleNumber, [selectedModalOrder.WorkOrderId]: e.target.value })}
-                                className="w-full bg-white border border-slate-205 rounded px-2.5 py-1.5 text-[11px] font-bold focus:ring-1 focus:ring-indigo-400 focus:outline-none"
+                                readOnly
+                                value={vehicleNumber[selectedModalOrder.WorkOrderId] || "TN 38 AB 1111"}
+                                className="w-full bg-slate-100 border border-slate-205 rounded px-2.5 py-1.5 text-[11px] font-mono text-slate-500 cursor-not-allowed focus:outline-none"
                               />
                             </div>
                           </div>
                           <button
                             onClick={async () => {
-                              await onAssignDriver(activeDisp.DispatchId, driverSelected, vehicleNumber[selectedModalOrder.WorkOrderId] || "N/A");
+                              const vNum = vehicleNumber[selectedModalOrder.WorkOrderId] || "TN 38 AB 1111";
+                              await onAssignDriver(activeDisp.DispatchId, driverSelected, vNum);
                               fetchDispatches();
                             }}
                             className="rounded-lg bg-indigo-600 hover:bg-indigo-700 font-bold text-white py-1.5 px-4 text-[11px] cursor-pointer"
@@ -2272,7 +2323,7 @@ function DriverDashboard({ currentUser, onVerifyDeliveryOTP, onUpdateLocation }:
 
   const listMyRuns = async () => {
     try {
-      const res = await fetch("/api/driver/my-deliveries");
+      const res = await fetch("/api/driver/my-deliveries?driverId=" + currentUser.id);
       if (res.ok) setDeliveries(await res.json());
     } catch (e) {
       console.error(e);
@@ -2331,7 +2382,12 @@ function DriverDashboard({ currentUser, onVerifyDeliveryOTP, onUpdateLocation }:
                   ))}
                 </div>
 
-
+                {wo.Status === "1_ToBeDispatched" && (
+                  <div className="bg-indigo-50 text-indigo-700 p-3 rounded-xl border border-indigo-100 mt-4">
+                    <p className="font-bold text-xs mb-1">Status: Pending Loading</p>
+                    <p>Provide your 6-digit Dispatch OTP (sent to your email/SMS) to the Store Manager to verify your identity and receive the cargo.</p>
+                  </div>
+                )}
 
                 {/* Enter Subcontractor Receipt OTP check */}
                 {wo.Status === "2_InTransit_ToSubcontractor" && (

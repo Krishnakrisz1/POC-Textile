@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Mail, Bell, CheckCheck, Clock, ShieldCheck, X, ChevronRight, RefreshCw } from "lucide-react";
+import { Mail, Bell, CheckCheck, Clock, ShieldCheck, X, ChevronRight, RefreshCw, Trash2 } from "lucide-react";
 import { Notification, EmailLog } from "../types";
 
 interface Props {
@@ -175,7 +175,20 @@ export default function NotificationsDrawer({ userId }: Props) {
                 onClick={markAllRead}
                 className="flex items-center gap-1 text-slate-800 hover:text-slate-900 font-bold transition-colors"
               >
-                <CheckCheck className="h-3.5 w-3.5" /> Mark all as read
+                <CheckCheck className="h-4 w-4 text-emerald-500" />
+                Mark All Read
+              </button>
+            )}
+            {activeTab === "emails" && emails.length > 0 && (
+              <button
+                onClick={async () => {
+                  await fetch("/api/system/emails/clear", { method: "POST" });
+                  fetchLogs();
+                }}
+                className="flex items-center gap-1 text-slate-800 hover:text-rose-600 font-bold transition-colors"
+              >
+                <Trash2 className="h-3 w-3" />
+                Clear Emails
               </button>
             )}
           </div>

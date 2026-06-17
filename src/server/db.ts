@@ -224,8 +224,6 @@ export const INITIAL_DATABASE: DatabaseSchema = {
     { UserId: "user-3", Name: "Ramesh ProjectHead", Email: "po1@company.com", Phone: "+91 9876543210", RoleCode: "PROJECT_OWNER", RoleName: "Project Owner", IsActive: true, CreatedAt: "2026-01-12T10:00:00Z" },
     { UserId: "user-4", Name: "Senthil Operations", Email: "po2@company.com", Phone: "+91 9876543211", RoleCode: "PROJECT_OWNER", RoleName: "Project Owner", IsActive: true, CreatedAt: "2026-01-12T11:00:00Z" },
     { UserId: "user-5", Name: "Arun Knitting-Owner", Email: "pro1@company.com", Phone: "+91 9944332211", RoleCode: "PROCESS_OWNER", RoleName: "Process Owner", IsActive: true, CreatedAt: "2026-01-15T08:30:00Z" },
-    { UserId: "user-6", Name: "Karthik Dyeing-Owner", Email: "pro2@company.com", Phone: "+91 9944332212", RoleCode: "PROCESS_OWNER", RoleName: "Process Owner", IsActive: true, CreatedAt: "2026-01-15T09:00:00Z" },
-    { UserId: "user-7", Name: "Ravi Stitching-Owner", Email: "pro3@company.com", Phone: "+91 9944332213", RoleCode: "PROCESS_OWNER", RoleName: "Process Owner", IsActive: true, CreatedAt: "2026-01-15T09:30:00Z" },
     { UserId: "user-8", Name: "Sivakumar StoreManager", Email: "store@company.com", Phone: "+91 9944332214", RoleCode: "INVENTORY_OWNER", RoleName: "Inventory Owner", IsActive: true, CreatedAt: "2026-01-16T08:00:00Z" },
     { UserId: "user-9", Name: "Venkatesh Porter", Email: "driver1@company.com", Phone: "+91 9361112222", RoleCode: "PORTER_DRIVER", RoleName: "Porter Driver", IsActive: true, CreatedAt: "2026-01-18T10:00:00Z" },
     { UserId: "user-10", Name: "Muthu Logistics", Email: "driver2@company.com", Phone: "+91 9361113333", RoleCode: "PORTER_DRIVER", RoleName: "Porter Driver", IsActive: true, CreatedAt: "2026-01-18T11:00:00Z" },
@@ -325,7 +323,7 @@ export const INITIAL_DATABASE: DatabaseSchema = {
       ProcessName: "Royal Blue Dyeing and Compacting",
       ProcessType: "Dyeing",
       ProcessInstruction: "Dyeing deep royal blue with color-fastness rating > 4.5. Stenter drying only.",
-      ProcessOwnerId: "user-6",
+      ProcessOwnerId: "user-5",
       Priority: "High",
       ExpectedDeliveryDays: 12,
       Status: "InProgress",
@@ -337,7 +335,7 @@ export const INITIAL_DATABASE: DatabaseSchema = {
       ProcessName: "Double-Stitch Collar Joinery",
       ProcessType: "Stitching",
       ProcessInstruction: "Reinforced collar backing stitches, rib neck size 38' to 44'.",
-      ProcessOwnerId: "user-7",
+      ProcessOwnerId: "user-5",
       Priority: "Medium",
       ExpectedDeliveryDays: 15,
       Status: "Pending",
@@ -350,7 +348,7 @@ export const INITIAL_DATABASE: DatabaseSchema = {
       ProcessName: "Bed Linens Weaving Setup",
       ProcessType: "Knitting",
       ProcessInstruction: "Broad weaving machines 120 inch roll-widths.",
-      ProcessOwnerId: "user-5",
+      ProcessOwnerId: "",
       Priority: "Medium",
       ExpectedDeliveryDays: 15,
       Status: "Pending",
@@ -384,7 +382,7 @@ export const INITIAL_DATABASE: DatabaseSchema = {
       Status: "2_InTransit_ToSubcontractor",
       DispatchDate: "2026-06-14T11:45:00Z",
       ExpectedReturnDate: "2026-06-26",
-      CreatedBy: "user-6",
+      CreatedBy: "user-5",
       CreatedAt: "2026-06-12T09:30:00Z"
     },
     {
@@ -432,6 +430,17 @@ export const INITIAL_DATABASE: DatabaseSchema = {
       DispatchedAt: "2026-06-14T11:45:00Z",
       LoadingAcknowledgedAt: "2026-06-14T11:40:00Z",
       LoadingAcknowledgedBy: "user-8"
+    },
+    {
+      DispatchId: "disp-3",
+      WorkOrderId: "wo-3",
+      InventoryOwnerId: "user-8",
+      DriverId: "user-11",
+      DispatchOTP: "987654",
+      OTPExpiry: "2026-06-18T14:00:00Z",
+      OTPVerifiedAt: "",
+      DeliveryChallanPath: "challan_WO-POLO-003.pdf",
+      QuantityDispatched: 0
     }
   ],
   deliveries: [
@@ -476,7 +485,8 @@ export const INITIAL_DATABASE: DatabaseSchema = {
   ],
   emailLogs: [
     { EmailId: "em-1", WorkOrderId: "wo-1", RecipientEmail: "knitting@sub.com", Subject: "Work Order #WO-POLO-001 — Materials Dispatched | Sakthithara Textile", Body: "Materials for knitting dispatched. Driver: Venkatesh, Delivery OTP: 123456.", SentAt: "2026-06-01T09:15:00Z", DeliveryStatus: "Sent" },
-    { EmailId: "em-2", WorkOrderId: "wo-2", RecipientEmail: "dyeing@sub.com", Subject: "Work Order #WO-POLO-002 — Materials Dispatched | Sakthithara Textile", Body: "Materials for dyeing dispatched. Driver: Muthu, Delivery OTP: 753951.", SentAt: "2026-06-14T11:50:00Z", DeliveryStatus: "Sent" }
+    { EmailId: "em-2", WorkOrderId: "wo-2", RecipientEmail: "dyeing@sub.com", Subject: "Work Order #WO-POLO-002 — Materials Dispatched | Sakthithara Textile", Body: "Materials for dyeing dispatched. Driver: Muthu, Delivery OTP: 753951.", SentAt: "2026-06-14T11:50:00Z", DeliveryStatus: "Sent" },
+    { EmailId: "em-3", WorkOrderId: "wo-3", RecipientEmail: "knitting@sub.com", Subject: "Work Order #WO-POLO-003 - Materials Dispatched | Sakthithara Textile", Body: "Materials for knitting dispatched. Driver: Gopal Driver, Delivery OTP: 987654.", SentAt: "2026-06-15T10:00:00Z", DeliveryStatus: "Sent" }
   ],
   trackingEvents: [
     // Driver travelling from Tiruppur warehouse towards SIPCOT Erode (Kalai Dyeing)
