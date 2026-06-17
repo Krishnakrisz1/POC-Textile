@@ -4,10 +4,9 @@ import { Notification, EmailLog } from "../types";
 
 interface Props {
   userId: string;
-  onNavigateToPortal: (workOrderId: string) => void;
 }
 
-export default function NotificationsDrawer({ userId, onNavigateToPortal }: Props) {
+export default function NotificationsDrawer({ userId }: Props) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [emails, setEmails] = useState<EmailLog[]>([]);
   const [activeTab, setActiveTab] = useState<"notifications" | "emails">("notifications");
@@ -282,15 +281,6 @@ export default function NotificationsDrawer({ userId, onNavigateToPortal }: Prop
                             </span>
                           </div>
                         )}
-                        <button
-                          onClick={() => {
-                            setIsOpen(false);
-                            onNavigateToPortal(e.WorkOrderId);
-                          }}
-                          className="flex items-center gap-1 text-xs rounded-lg border border-slate-200 bg-white py-1.5 px-3 font-semibold text-slate-800 hover:bg-slate-50 hover:border-slate-300 transition-all ml-auto cursor-pointer"
-                        >
-                          Enter Partner Portal <ChevronRight className="h-3.5 w-3.5" />
-                        </button>
                       </div>
                     </div>
                   );
