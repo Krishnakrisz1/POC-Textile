@@ -1,0 +1,6 @@
+{
+  "name": "Sakthithara Textile Material Tracking",
+  "description": "End-to-end material tracking, process management, and logistics system with OTP validation and subcontractor coordination.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

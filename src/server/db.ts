@@ -1,0 +1,516 @@
+import fs from "fs";
+import path from "path";
+
+const DB_FILE_PATH = path.join(process.cwd(), "db.json");
+
+// Define basic interface schemas matching our spec
+export interface User {
+  UserId: string;
+  Name: string;
+  Email: string;
+  Phone: string;
+  RoleCode: "SUPER_ADMIN" | "ADMIN" | "PROJECT_OWNER" | "PROCESS_OWNER" | "INVENTORY_OWNER" | "PORTER_DRIVER" | "SUBCONTRACTOR";
+  RoleName: string;
+  IsActive: boolean;
+  CreatedAt: string;
+}
+
+export interface Project {
+  ProjectId: string;
+  ProjectName: string;
+  ProjectCode: string;
+  CustomerId: string;
+  CustomerName: string;
+  OrderInstruction: string;
+  AdminId: string;
+  ProjectOwnerId: string;
+  Timeline: Array<{ milestone: string; dueDate: string }>;
+  Status: "Draft" | "PendingApproval" | "Approved" | "InProgress" | "Completed" | "Closed";
+  CreatedAt: string;
+  ApprovedAt?: string;
+  ApprovedBy?: string;
+}
+
+export interface Process {
+  ProcessId: string;
+  ProjectId: string;
+  ProcessName: string;
+  ProcessType: "Knitting" | "Dyeing" | "Cutting" | "Printing" | "Embroidery" | "Stitching" | "Ironing" | "Packing";
+  ProcessInstruction: string;
+  ProcessOwnerId: string;
+  Priority: "High" | "Medium" | "Low";
+  ExpectedDeliveryDays: number;
+  Status: "Pending" | "Assigned" | "InProgress" | "Completed";
+  ProcessPDFPath?: string;
+  QCRequired: boolean;
+}
+
+export interface Subcontractor {
+  SubcontractorId: string;
+  CompanyName: string;
+  ContactPerson: string;
+  Email: string;
+  Phone: string;
+  Address: string;
+  ProcessTypes: string[]; // e.g. ["Knitting", "Dyeing"]
+  Rating: number;
+  IsActive: boolean;
+}
+
+export interface WorkOrder {
+  WorkOrderId: string;
+  WorkOrderCode: string;
+  ProcessId: string;
+  SubcontractorId: string;
+  MaterialDetails: Array<{ ItemId: string; ItemName: string; Quantity: number; Unit: string }>;
+  TotalQuantity: number;
+  Unit: string;
+  Status:
+    | "1_ToBeDispatched"
+    | "2_InTransit_ToSubcontractor"
+    | "3_ReceivedBySubcontractor"
+    | "4_InProcessAtSubcontractor"
+    | "5_ReturnInTransit"
+    | "6_ReceivedAtCompanyStore"
+    | "7_Completed"
+    | "PulledBack"
+    | "Closed";
+  DispatchDate?: string;
+  ExpectedReturnDate: string;
+  ActualReturnDate?: string;
+  CreatedBy: string;
+  CreatedAt: string;
+}
+
+export interface MaterialDispatch {
+  DispatchId: string;
+  WorkOrderId: string;
+  InventoryOwnerId: string;
+  DriverId: string;
+  DispatchOTP: string;
+  OTPExpiry: string;
+  OTPVerifiedAt?: string;
+  DeliveryChallanPath: string;
+  QuantityDispatched: number;
+  DispatchedAt?: string;
+  LoadingAcknowledgedAt?: string;
+  LoadingAcknowledgedBy?: string;
+}
+
+export interface Delivery {
+  DeliveryId: string;
+  DispatchId: string;
+  WorkOrderId: string;
+  DriverId: string;
+  SubcontractorOTP: string;
+  SubOTPExpiry: string;
+  SubOTPVerifiedAt?: string;
+  DeliveredAt?: string;
+  ReceivedByName?: string;
+  PhotoProofPath?: string;
+}
+
+export interface ReturnPickup {
+  ReturnId: string;
+  WorkOrderId: string;
+  DriverId: string;
+  PickupDate?: string;
+  ReturnedAt?: string;
+  CompanyAcknowledgedAt?: string;
+  CompanyAcknowledgedBy?: string;
+  ReturnQuantity: number;
+  ReturnChallanPath?: string;
+}
+
+export interface OTPLog {
+  OTPId: string;
+  WorkOrderId: string;
+  Type: "Dispatch" | "Delivery" | "Return";
+  OTPCode: string;
+  SentTo: string;
+  SentAt: string;
+  VerifiedAt?: string;
+  IsExpired: boolean;
+}
+
+export interface EmailLog {
+  EmailId: string;
+  WorkOrderId: string;
+  RecipientEmail: string;
+  Subject: string;
+  Body: string;
+  SentAt: string;
+  DeliveryStatus: "Sent" | "Failed";
+}
+
+export interface InventoryItem {
+  ItemId: string;
+  ItemName: string;
+  ItemCode: string;
+  Category: "Yarn" | "Fabric" | "DyedMaterial" | "CutPanels" | "Other";
+  AvailableQuantity: number;
+  Unit: string;
+  WarehouseLocation: string;
+  LastUpdatedAt: string;
+}
+
+export interface InventoryTransaction {
+  TxnId: string;
+  ItemId: string;
+  WorkOrderId?: string;
+  TransactionType: "Issue" | "Return" | "Add";
+  Quantity: number;
+  TransactedBy: string;
+  TransactedAt: string;
+  Remarks: string;
+}
+
+export interface TrackingEvent {
+  EventId: string;
+  WorkOrderId: string;
+  DriverId: string;
+  Latitude: number;
+  Longitude: number;
+  EventType: "PickedUp" | "InTransit" | "Delivered" | "ReturnPickedUp" | "ReturnedToWarehouse";
+  Timestamp: string;
+  Remarks: string;
+}
+
+export interface PullBack {
+  PullBackId: string;
+  WorkOrderId: string;
+  Reason: "Delay" | "QualityIssue" | "NonResponse" | "CapacityProblem" | "Other";
+  InitiatedBy: string;
+  InitiatedAt: string;
+  OldSubcontractorId: string;
+  NewWorkOrderId?: string;
+}
+
+export interface Notification {
+  NotifId: string;
+  UserId: string;
+  Title: string;
+  Message: string;
+  Type: string;
+  IsRead: boolean;
+  CreatedAt: string;
+  LinkRef?: string;
+}
+
+export interface DatabaseSchema {
+  users: User[];
+  projects: Project[];
+  processes: Process[];
+  subcontractors: Subcontractor[];
+  workOrders: WorkOrder[];
+  dispatches: MaterialDispatch[];
+  deliveries: Delivery[];
+  returnPickups: ReturnPickup[];
+  otpLogs: OTPLog[];
+  emailLogs: EmailLog[];
+  inventory: InventoryItem[];
+  transactions: InventoryTransaction[];
+  trackingEvents: TrackingEvent[];
+  pullbacks: PullBack[];
+  notifications: Notification[];
+}
+
+export const INITIAL_DATABASE: DatabaseSchema = {
+  users: [
+    { UserId: "user-1", Name: "Kalyan MD", Email: "krishnajayanth54@gmail.com", Phone: "+91 9443210123", RoleCode: "SUPER_ADMIN", RoleName: "SuperAdmin (MD)", IsActive: true, CreatedAt: "2026-01-10T12:00:00Z" },
+    { UserId: "user-1-sa", Name: "Sakthithara Director", Email: "superadmin@sakthithara.com", Phone: "+91 9443210124", RoleCode: "SUPER_ADMIN", RoleName: "SuperAdmin (Director)", IsActive: true, CreatedAt: "2026-01-10T12:00:00Z" },
+    { UserId: "user-2", Name: "Meena Admin", Email: "admin@company.com", Phone: "+91 9845678901", RoleCode: "ADMIN", RoleName: "Admin", IsActive: true, CreatedAt: "2026-01-11T09:00:00Z" },
+    { UserId: "user-3", Name: "Ramesh ProjectHead", Email: "po1@company.com", Phone: "+91 9876543210", RoleCode: "PROJECT_OWNER", RoleName: "Project Owner", IsActive: true, CreatedAt: "2026-01-12T10:00:00Z" },
+    { UserId: "user-4", Name: "Senthil Operations", Email: "po2@company.com", Phone: "+91 9876543211", RoleCode: "PROJECT_OWNER", RoleName: "Project Owner", IsActive: true, CreatedAt: "2026-01-12T11:00:00Z" },
+    { UserId: "user-5", Name: "Arun Knitting-Owner", Email: "pro1@company.com", Phone: "+91 9944332211", RoleCode: "PROCESS_OWNER", RoleName: "Process Owner", IsActive: true, CreatedAt: "2026-01-15T08:30:00Z" },
+    { UserId: "user-6", Name: "Karthik Dyeing-Owner", Email: "pro2@company.com", Phone: "+91 9944332212", RoleCode: "PROCESS_OWNER", RoleName: "Process Owner", IsActive: true, CreatedAt: "2026-01-15T09:00:00Z" },
+    { UserId: "user-7", Name: "Ravi Stitching-Owner", Email: "pro3@company.com", Phone: "+91 9944332213", RoleCode: "PROCESS_OWNER", RoleName: "Process Owner", IsActive: true, CreatedAt: "2026-01-15T09:30:00Z" },
+    { UserId: "user-8", Name: "Sivakumar StoreManager", Email: "store@company.com", Phone: "+91 9944332214", RoleCode: "INVENTORY_OWNER", RoleName: "Inventory Owner", IsActive: true, CreatedAt: "2026-01-16T08:00:00Z" },
+    { UserId: "user-9", Name: "Venkatesh Porter", Email: "driver1@company.com", Phone: "+91 9361112222", RoleCode: "PORTER_DRIVER", RoleName: "Porter Driver", IsActive: true, CreatedAt: "2026-01-18T10:00:00Z" },
+    { UserId: "user-10", Name: "Muthu Logistics", Email: "driver2@company.com", Phone: "+91 9361113333", RoleCode: "PORTER_DRIVER", RoleName: "Porter Driver", IsActive: true, CreatedAt: "2026-01-18T11:00:00Z" },
+    { UserId: "user-11", Name: "Gopal Driver", Email: "driver3@company.com", Phone: "+91 9361114444", RoleCode: "PORTER_DRIVER", RoleName: "Porter Driver", IsActive: true, CreatedAt: "2026-01-18T12:00:00Z" },
+    { UserId: "user-12", Name: "Subba Rao (Knitting Co.)", Email: "knitting@sub.com", Phone: "+91 9952220101", RoleCode: "SUBCONTRACTOR", RoleName: "Subcontractor", IsActive: true, CreatedAt: "2026-01-20T10:00:00Z" },
+    { UserId: "user-13", Name: "Kalaiselvan (Kalai Dyeing)", Email: "dyeing@sub.com", Phone: "+91 9952220102", RoleCode: "SUBCONTRACTOR", RoleName: "Subcontractor", IsActive: true, CreatedAt: "2026-01-20T10:30:00Z" },
+    { UserId: "user-14", Name: "Ananth (Sri Stitching Hub)", Email: "stitching@sub.com", Phone: "+91 9952220103", RoleCode: "SUBCONTRACTOR", RoleName: "Subcontractor", IsActive: true, CreatedAt: "2026-01-20T11:00:00Z" },
+    { UserId: "user-15", Name: "Sridhar (Print Masters)", Email: "printing@sub.com", Phone: "+91 9952220104", RoleCode: "SUBCONTRACTOR", RoleName: "Subcontractor", IsActive: true, CreatedAt: "2026-01-20T11:30:00Z" }
+  ],
+  subcontractors: [
+    { SubcontractorId: "sub-1", CompanyName: "Knitting Company Pvt Ltd", ContactPerson: "Subba Rao", Email: "knitting@sub.com", Phone: "+91 9952220101", Address: "12, Textile Avenue, Tiruppur, TN - 641603", ProcessTypes: ["Knitting"], Rating: 4.8, IsActive: true },
+    { SubcontractorId: "sub-2", CompanyName: "Kalai Dyeing Works", ContactPerson: "Kalaiselvan", Email: "dyeing@sub.com", Phone: "+91 9952220102", Address: "45, Industrial Estate, SIPCOT, Erode, TN - 638002", ProcessTypes: ["Dyeing"], Rating: 4.5, IsActive: true },
+    { SubcontractorId: "sub-3", CompanyName: "Sri Stitching Hub", ContactPerson: "Ananth", Email: "stitching@sub.com", Phone: "+91 9952220103", Address: "11A, Weaver colony, Salem, TN - 636005", ProcessTypes: ["Stitching", "Ironing", "Packing"], Rating: 4.2, IsActive: true },
+    { SubcontractorId: "sub-4", CompanyName: "Print Masters & Co.", ContactPerson: "Sridhar", Email: "printing@sub.com", Phone: "+91 9952220104", Address: "7, Dyeing Factory Street, Tiruppur, TN - 641652", ProcessTypes: ["Printing", "Embroidery"], Rating: 4.7, IsActive: true }
+  ],
+  inventory: [
+    { ItemId: "inv-1", ItemName: "Grey Yarn 40s combed", ItemCode: "YRN-40C", Category: "Yarn", AvailableQuantity: 9200, Unit: "kg", WarehouseLocation: "Aisle A1, Shelf 3", LastUpdatedAt: "2026-06-15T10:00:00Z" },
+    { ItemId: "inv-2", ItemName: "Grey Fabric Interlock", ItemCode: "FAB-INT", Category: "Fabric", AvailableQuantity: 4400, Unit: "meters", WarehouseLocation: "Aisle B4, Floor Sector", LastUpdatedAt: "2026-06-15T10:00:00Z" },
+    { ItemId: "inv-3", ItemName: "Dyed Jersey Fabric Royal Blue", ItemCode: "FAB-ROY", Category: "DyedMaterial", AvailableQuantity: 2800, Unit: "meters", WarehouseLocation: "Aisle C1, Climate Shelf", LastUpdatedAt: "2026-06-15T11:00:00Z" },
+    { ItemId: "inv-4", ItemName: "Cut Chest Panels Cotton", ItemCode: "CUT-PNL", Category: "CutPanels", AvailableQuantity: 2000, Unit: "pcs", WarehouseLocation: "Aisle D2, Pallet", LastUpdatedAt: "2026-06-15T12:00:00Z" }
+  ],
+  transactions: [
+    { TxnId: "txn-1", ItemId: "inv-1", TransactionType: "Add", Quantity: 10000, TransactedBy: "user-8", TransactedAt: "2026-01-20T10:00:00Z", Remarks: "Initial seed inventory add" },
+    { TxnId: "txn-2", ItemId: "inv-2", TransactionType: "Add", Quantity: 5000, TransactedBy: "user-8", TransactedAt: "2026-01-20T10:00:00Z", Remarks: "Initial seed inventory add" },
+    { TxnId: "txn-3", ItemId: "inv-1", WorkOrderId: "wo-1", TransactionType: "Issue", Quantity: 800, TransactedBy: "user-8", TransactedAt: "2026-06-02T10:15:00Z", Remarks: "Dispatched to Knitting Co for Polo Order" },
+    { TxnId: "txn-4", ItemId: "inv-2", WorkOrderId: "wo-2", TransactionType: "Issue", Quantity: 600, TransactedBy: "user-8", TransactedAt: "2026-06-14T11:45:00Z", Remarks: "Dispatched to Kalai Dyeing" }
+  ],
+  projects: [
+    {
+      ProjectId: "proj-1",
+      ProjectName: "Summer Polo Shirts 2026",
+      ProjectCode: "PROJ-POLO-2026",
+      CustomerId: "cust-nike",
+      CustomerName: "ActiveWear India Group",
+      OrderInstruction: "Pique polo shirts with double ventilation and custom collar prints. Material must be soft cotton-poly blend.",
+      AdminId: "user-2",
+      ProjectOwnerId: "user-3",
+      Timeline: [
+        { milestone: "Knitting Completion", dueDate: "2026-06-10" },
+        { milestone: "Dyeing & Bleaching", dueDate: "2026-06-25" },
+        { milestone: "Stitching & Finish", dueDate: "2026-07-15" }
+      ],
+      Status: "InProgress",
+      CreatedAt: "2026-05-25T10:00:00Z"
+    },
+    {
+      ProjectId: "proj-2",
+      ProjectName: "Organic Cotton Bed Sheets",
+      ProjectCode: "PROJ-BED-LINEN",
+      CustomerId: "cust-fab",
+      CustomerName: "FabHome Decor Ltd",
+      OrderInstruction: "300 thread count organic combed yarn weaving. Eco-friendly reactive bleaching only. Zero chemical emissions active.",
+      AdminId: "user-2",
+      ProjectOwnerId: "user-4",
+      Timeline: [
+        { milestone: "Yarn Preparation", dueDate: "2026-06-20" },
+        { milestone: "Knitting Weave", dueDate: "2026-07-05" },
+        { milestone: "Sizing & Softening", dueDate: "2026-07-15" }
+      ],
+      Status: "PendingApproval",
+      CreatedAt: "2026-06-15T15:00:00Z"
+    },
+    {
+      ProjectId: "proj-3",
+      ProjectName: "Winter Knit Hoodies",
+      ProjectCode: "PROJ-HOODIES-WNTR",
+      CustomerId: "cust-dec",
+      CustomerName: "Decade Originals Co",
+      OrderInstruction: "Fleece cotton heavy density knit hoodies. Quality check required on sewing seams and color bleeding tests.",
+      AdminId: "user-2",
+      ProjectOwnerId: "user-3",
+      Timeline: [
+        { milestone: "Knit & Weave", dueDate: "2026-04-10" },
+        { milestone: "Dyeing Deep Navy", dueDate: "2026-04-20" },
+        { milestone: "Sewing & Zipper Fits", dueDate: "2026-05-10" }
+      ],
+      Status: "Completed",
+      CreatedAt: "2026-03-20T09:00:00Z"
+    }
+  ],
+  processes: [
+    {
+      ProcessId: "proc-1",
+      ProjectId: "proj-1",
+      ProcessName: "Yarn Weaving and Knitting",
+      ProcessType: "Knitting",
+      ProcessInstruction: "Circular knit interlock structure. Thickness 220 GSM.",
+      ProcessOwnerId: "user-5",
+      Priority: "High",
+      ExpectedDeliveryDays: 10,
+      Status: "Completed",
+      QCRequired: true
+    },
+    {
+      ProcessId: "proc-2",
+      ProjectId: "proj-1",
+      ProcessName: "Royal Blue Dyeing and Compacting",
+      ProcessType: "Dyeing",
+      ProcessInstruction: "Dyeing deep royal blue with color-fastness rating > 4.5. Stenter drying only.",
+      ProcessOwnerId: "user-6",
+      Priority: "High",
+      ExpectedDeliveryDays: 12,
+      Status: "InProgress",
+      QCRequired: true
+    },
+    {
+      ProcessId: "proc-3",
+      ProjectId: "proj-1",
+      ProcessName: "Double-Stitch Collar Joinery",
+      ProcessType: "Stitching",
+      ProcessInstruction: "Reinforced collar backing stitches, rib neck size 38' to 44'.",
+      ProcessOwnerId: "user-7",
+      Priority: "Medium",
+      ExpectedDeliveryDays: 15,
+      Status: "Pending",
+      QCRequired: true
+    },
+    // Proj 2 planned processes
+    {
+      ProcessId: "proc-4",
+      ProjectId: "proj-2",
+      ProcessName: "Bed Linens Weaving Setup",
+      ProcessType: "Knitting",
+      ProcessInstruction: "Broad weaving machines 120 inch roll-widths.",
+      ProcessOwnerId: "user-5",
+      Priority: "Medium",
+      ExpectedDeliveryDays: 15,
+      Status: "Pending",
+      QCRequired: false
+    }
+  ],
+  workOrders: [
+    {
+      WorkOrderId: "wo-1",
+      WorkOrderCode: "WO-POLO-001",
+      ProcessId: "proc-1",
+      SubcontractorId: "sub-1",
+      MaterialDetails: [{ ItemId: "inv-1", ItemName: "Grey Yarn 40s combed", Quantity: 800, Unit: "kg" }],
+      TotalQuantity: 800,
+      Unit: "kg",
+      Status: "7_Completed",
+      DispatchDate: "2026-06-01T09:00:00Z",
+      ExpectedReturnDate: "2026-06-11",
+      ActualReturnDate: "2026-06-10T14:30:00Z",
+      CreatedBy: "user-5",
+      CreatedAt: "2026-05-30T10:00:00Z"
+    },
+    {
+      WorkOrderId: "wo-2",
+      WorkOrderCode: "WO-POLO-002",
+      ProcessId: "proc-2",
+      SubcontractorId: "sub-2",
+      MaterialDetails: [{ ItemId: "inv-2", ItemName: "Grey Fabric Interlock", Quantity: 600, Unit: "meters" }],
+      TotalQuantity: 600,
+      Unit: "meters",
+      Status: "2_InTransit_ToSubcontractor",
+      DispatchDate: "2026-06-14T11:45:00Z",
+      ExpectedReturnDate: "2026-06-26",
+      CreatedBy: "user-6",
+      CreatedAt: "2026-06-12T09:30:00Z"
+    }
+  ],
+  dispatches: [
+    {
+      DispatchId: "disp-1",
+      WorkOrderId: "wo-1",
+      InventoryOwnerId: "user-8",
+      DriverId: "user-9",
+      DispatchOTP: "882103",
+      OTPExpiry: "2026-06-01T11:00:00Z",
+      OTPVerifiedAt: "2026-06-01T09:12:00Z",
+      DeliveryChallanPath: "challan_WO-POLO-001.pdf",
+      QuantityDispatched: 800,
+      DispatchedAt: "2026-06-01T09:12:00Z",
+      LoadingAcknowledgedAt: "2026-06-01T09:12:00Z",
+      LoadingAcknowledgedBy: "user-8"
+    },
+    {
+      DispatchId: "disp-2",
+      WorkOrderId: "wo-2",
+      InventoryOwnerId: "user-8",
+      DriverId: "user-10",
+      DispatchOTP: "421098",
+      OTPExpiry: "2026-06-14T14:00:00Z",
+      OTPVerifiedAt: "2026-06-14T11:45:00Z",
+      DeliveryChallanPath: "challan_WO-POLO-002.pdf",
+      QuantityDispatched: 600,
+      DispatchedAt: "2026-06-14T11:45:00Z",
+      LoadingAcknowledgedAt: "2026-06-14T11:40:00Z",
+      LoadingAcknowledgedBy: "user-8"
+    }
+  ],
+  deliveries: [
+    {
+      DeliveryId: "del-1",
+      DispatchId: "disp-1",
+      WorkOrderId: "wo-1",
+      DriverId: "user-9",
+      SubcontractorOTP: "123456",
+      SubOTPExpiry: "2026-06-01T15:00:00Z",
+      SubOTPVerifiedAt: "2026-06-01T13:40:00Z",
+      DeliveredAt: "2026-06-01T13:40:00Z",
+      ReceivedByName: "Subba Rao"
+    },
+    {
+      DeliveryId: "del-2",
+      DispatchId: "disp-2",
+      WorkOrderId: "wo-2",
+      DriverId: "user-10",
+      SubcontractorOTP: "753951",
+      SubOTPExpiry: "2026-06-14T18:00:00Z"
+    }
+  ],
+  returnPickups: [
+    {
+      ReturnId: "ret-1",
+      WorkOrderId: "wo-1",
+      DriverId: "user-9",
+      PickupDate: "2026-06-10T10:00:00Z",
+      ReturnedAt: "2026-06-10T14:30:00Z",
+      CompanyAcknowledgedAt: "2026-06-10T14:50:00Z",
+      CompanyAcknowledgedBy: "user-8",
+      ReturnQuantity: 800,
+      ReturnChallanPath: "return_challan_WO-POLO-001.pdf"
+    }
+  ],
+  otpLogs: [
+    { OTPId: "otp-1", WorkOrderId: "wo-1", Type: "Dispatch", OTPCode: "882103", SentTo: "+91 9361112222", SentAt: "2026-06-01T09:00:00Z", VerifiedAt: "2026-06-01T09:12:00Z", IsExpired: false },
+    { OTPId: "otp-2", WorkOrderId: "wo-1", Type: "Delivery", OTPCode: "123456", SentTo: "knitting@sub.com", SentAt: "2026-06-01T09:15:00Z", VerifiedAt: "2026-06-01T13:40:00Z", IsExpired: false },
+    { OTPId: "otp-3", WorkOrderId: "wo-2", Type: "Dispatch", OTPCode: "421098", SentTo: "+91 9361113333", SentAt: "2026-06-14T11:00:00Z", VerifiedAt: "2026-06-14T11:45:00Z", IsExpired: false },
+    { OTPId: "otp-4", WorkOrderId: "wo-2", Type: "Delivery", OTPCode: "753951", SentTo: "dyeing@sub.com", SentAt: "2026-06-14T11:50:00Z", IsExpired: false }
+  ],
+  emailLogs: [
+    { EmailId: "em-1", WorkOrderId: "wo-1", RecipientEmail: "knitting@sub.com", Subject: "Work Order #WO-POLO-001 — Materials Dispatched | Sakthithara Textile", Body: "Materials for knitting dispatched. Driver: Venkatesh, Delivery OTP: 123456.", SentAt: "2026-06-01T09:15:00Z", DeliveryStatus: "Sent" },
+    { EmailId: "em-2", WorkOrderId: "wo-2", RecipientEmail: "dyeing@sub.com", Subject: "Work Order #WO-POLO-002 — Materials Dispatched | Sakthithara Textile", Body: "Materials for dyeing dispatched. Driver: Muthu, Delivery OTP: 753951.", SentAt: "2026-06-14T11:50:00Z", DeliveryStatus: "Sent" }
+  ],
+  trackingEvents: [
+    // Driver travelling from Tiruppur warehouse towards SIPCOT Erode (Kalai Dyeing)
+    { EventId: "tr-1", WorkOrderId: "wo-2", DriverId: "user-10", Latitude: 11.1085, Longitude: 77.3411, EventType: "PickedUp", Timestamp: "2026-06-14T11:45:00Z", Remarks: "Materials loaded, departing Tiruppur" },
+    { EventId: "tr-2", WorkOrderId: "wo-2", DriverId: "user-10", Latitude: 11.1610, Longitude: 77.4520, EventType: "InTransit", Timestamp: "2026-06-14T12:00:00Z", Remarks: "Passing Avinashi highway, in transit" },
+    { EventId: "tr-3", WorkOrderId: "wo-2", DriverId: "user-10", Latitude: 11.2330, Longitude: 77.5850, EventType: "InTransit", Timestamp: "2026-06-14T12:30:00Z", Remarks: "Passing Perundurai SIPCOT highway toll" }
+  ],
+  pullbacks: [],
+  notifications: [
+    { NotifId: "not-1", UserId: "user-1", Title: "New Project Onboarded", Message: "Organic Cotton Bed Sheets stands pending for your SuperAdmin approval.", Type: "STAKEHOLDER", IsRead: false, CreatedAt: "2026-06-15T15:05:00Z", LinkRef: "/superadmin/projects" },
+    { NotifId: "not-2", UserId: "user-3", Title: "Work Order Delivered", Message: "WO-POLO-001 knitted materials delivered to Knitting Co. successfully.", Type: "DELIVERY", IsRead: true, CreatedAt: "2026-06-01T13:42:00Z", LinkRef: "/tracking/wo-1" }
+  ]
+};
+
+export class JSONDB {
+  private static read(): DatabaseSchema {
+    try {
+      if (!fs.existsSync(DB_FILE_PATH)) {
+        fs.writeFileSync(DB_FILE_PATH, JSON.stringify(INITIAL_DATABASE, null, 2));
+        return INITIAL_DATABASE;
+      }
+      const data = fs.readFileSync(DB_FILE_PATH, "utf8");
+      return JSON.parse(data);
+    } catch (e) {
+      console.error("Failed to read JSON DB, restoring seed", e);
+      return INITIAL_DATABASE;
+    }
+  }
+
+  private static write(data: DatabaseSchema) {
+    try {
+      fs.writeFileSync(DB_FILE_PATH, JSON.stringify(data, null, 2));
+    } catch (e) {
+      console.error("Failed to write to JSON DB", e);
+    }
+  }
+
+  public static get<K extends keyof DatabaseSchema>(key: K): DatabaseSchema[K] {
+    const db = this.read();
+    return db[key];
+  }
+
+  public static set<K extends keyof DatabaseSchema>(key: K, value: DatabaseSchema[K]) {
+    const db = this.read();
+    db[key] = value;
+    this.write(db);
+  }
+
+  public static update(updater: (db: DatabaseSchema) => void) {
+    const db = this.read();
+    updater(db);
+    this.write(db);
+  }
+}
