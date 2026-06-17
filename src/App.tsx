@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import {
   Layers, Users, TrendingUp, CheckCircle, Clock, AlertCircle, Ship, BookOpen,
-  ArrowRight, ShieldCheck, Mail, Database, RefreshCw, Plus, Trash2, Calendar,
-  AlertTriangle, Truck, Eye, FileText, Check, CheckSquare, Sparkles, LogOut, Code, ClipboardList, Info, HelpCircle
+  ArrowRight, ShieldCheck, Mail, Database, RefreshCw, Plus, Trash2, Calendar, RotateCcw,
+  AlertTriangle, Truck, Eye, FileText, Check, CheckSquare, Sparkles, LogOut, Code, ClipboardList, Info, HelpCircle, X, CheckCheck
 } from "lucide-react";
 import { User, Project, Process, Subcontractor, WorkOrder, InventoryItem, Notification } from "./types";
 import NotificationsDrawer from "./components/NotificationsDrawer";
@@ -10,18 +10,30 @@ import TrackingTimeline from "./components/TrackingTimeline";
 
 export default function App() {
   // Navigation State
-  const [currentPath, setCurrentPath] = useState<string>("/");
+  const [currentUser, setCurrentUser] = useState<User>(() => {
+    const saved = localStorage.getItem("textile_poc_user");
+    if (saved) return JSON.parse(saved);
+    return {
+      id: "user-1",
+      name: "Kalyan MD",
+      email: "krishnajayanth54@gmail.com",
+      phone: "+91 9443210123",
+      role: "SUPER_ADMIN",
+      roleName: "SuperAdmin (MD)"
+    };
+  });
+  const [currentPath, setCurrentPath] = useState(() => {
+    return localStorage.getItem("textile_poc_path") || "/";
+  });
   const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string | null>(null);
 
-  // Authentication Simulator State
-  const [currentUser, setCurrentUser] = useState<User>({
-    id: "user-1",
-    name: "Kalyan MD",
-    email: "krishnajayanth54@gmail.com",
-    phone: "+91 9443210123",
-    role: "SUPER_ADMIN",
-    roleName: "SuperAdmin (MD)"
-  });
+  useEffect(() => {
+    localStorage.setItem("textile_poc_user", JSON.stringify(currentUser));
+  }, [currentUser]);
+
+  useEffect(() => {
+    localStorage.setItem("textile_poc_path", currentPath);
+  }, [currentPath]);
 
   // Global Sync Status
   const [projects, setProjects] = useState<Project[]>([]);
@@ -29,22 +41,18 @@ export default function App() {
   const [subcontractors, setSubcontractors] = useState<Subcontractor[]>([]);
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState("");
   const [successText, setSuccessText] = useState("");
 
-  const usersList = [
-    { id: "user-1", name: "Kalyan MD (SuperAdmin)", email: "krishnajayanth54@gmail.com", role: "SUPER_ADMIN", roleName: "SuperAdmin (MD)" },
-    { id: "user-1-sa", name: "Sakthithara Director", email: "superadmin@sakthithara.com", role: "SUPER_ADMIN", roleName: "SuperAdmin (Director)" },
-    { id: "user-2", name: "Meena Admin", email: "admin@company.com", role: "ADMIN", roleName: "Admin" },
-    { id: "user-3", name: "Ramesh ProjectHead", email: "po1@company.com", role: "PROJECT_OWNER", roleName: "Project Owner" },
-    { id: "user-4", name: "Senthil Operations", email: "po2@company.com", role: "PROJECT_OWNER", roleName: "Project Owner" },
-    { id: "user-5", name: "Arun Knitting-Owner", email: "pro1@company.com", role: "PROCESS_OWNER", roleName: "Process Owner" },
-    { id: "user-6", name: "Karthik Dyeing-Owner", email: "pro2@company.com", role: "PROCESS_OWNER", roleName: "Process Owner" },
-    { id: "user-7", name: "Ravi Stitching-Owner", email: "pro3@company.com", role: "PROCESS_OWNER", roleName: "Process Owner" },
-    { id: "user-8", name: "Sivakumar Store", email: "store@company.com", role: "INVENTORY_OWNER", roleName: "Inventory Owner" },
-    { id: "user-9", name: "Venkatesh Porter", email: "driver1@company.com", role: "PORTER_DRIVER", roleName: "Porter Driver" },
-    { id: "user-10", name: "Muthu Logistics", email: "driver2@company.com", role: "PORTER_DRIVER", roleName: "Porter Driver" }
+  const usersList: User[] = [
+    { id: "user-1", name: "SuperAdmin", email: "krishnajayanth54@gmail.com", phone: "", role: "SUPER_ADMIN", roleName: "SuperAdmin" },
+    { id: "user-2", name: "Admin", email: "admin@company.com", phone: "", role: "ADMIN", roleName: "Admin" },
+    { id: "user-3", name: "Project Owner", email: "po1@company.com", phone: "", role: "PROJECT_OWNER", roleName: "Project Owner" },
+    { id: "user-5", name: "Process Owner", email: "pro1@company.com", phone: "", role: "PROCESS_OWNER", roleName: "Process Owner" },
+    { id: "user-8", name: "Store Owner", email: "store@company.com", phone: "", role: "INVENTORY_OWNER", roleName: "Store Owner" },
+    { id: "user-9", name: "Driver", email: "driver1@company.com", phone: "", role: "PORTER_DRIVER", roleName: "Driver" }
   ];
 
   // Sync Backend State
@@ -56,12 +64,24 @@ export default function App() {
       const subRes = await fetch("/api/subcontractors");
       const woRes = await fetch("/api/work-orders");
       const invRes = await fetch("/api/inventory");
+      const userRes = await fetch("/api/users");
 
       if (projRes.ok) setProjects(await projRes.json());
       if (procRes.ok) setProcesses(await procRes.json());
       if (subRes.ok) setSubcontractors(await subRes.json());
       if (woRes.ok) setWorkOrders(await woRes.json());
       if (invRes.ok) setInventory(await invRes.json());
+      if (userRes.ok) {
+        const use = await userRes.json();
+        setAllUsers(use.map((u: any) => ({
+          id: u.UserId || u.id,
+          name: u.Name || u.name,
+          email: u.Email || u.email,
+          phone: u.Phone || u.phone,
+          role: u.RoleCode || u.role,
+          roleName: u.RoleName || u.roleName
+        })));
+      }
     } catch (e) {
       console.error(e);
       setErrorText("Failed to establish server synchronization. Verify backend is active.");
@@ -93,22 +113,17 @@ export default function App() {
       else if (selected.role === "INVENTORY_OWNER") setCurrentPath("/inventory/dashboard");
       else if (selected.role === "PORTER_DRIVER") setCurrentPath("/driver/my-deliveries");
       else setCurrentPath("/");
-      
+
       setSuccessText(`Logged in as simulated worker: ${selected.name}`);
       setTimeout(() => setSuccessText(""), 3000);
     }
   };
 
-  const handleNavigateToPortal = (workOrderId: string) => {
-    setSelectedWorkOrderId(workOrderId);
-    setCurrentPath(`/subcontractor/portal/${workOrderId}`);
-    setSuccessText("Successfully entered public partner portal routing.");
-    setTimeout(() => setSuccessText(""), 3000);
-  };
+
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row font-sans">
-      
+
       {/* Sleek Interface Sidebar Navigation */}
       <aside className="hidden lg:flex w-64 bg-[#0F172A] text-slate-300 flex-col shrink-0 border-r border-[#1E293B]">
         {/* Top Branding Section with custom spacing */}
@@ -139,11 +154,10 @@ export default function App() {
               else if (currentUser.role === "INVENTORY_OWNER") setCurrentPath("/inventory/dashboard");
               else if (currentUser.role === "PORTER_DRIVER") setCurrentPath("/driver/my-deliveries");
             }}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-lg transition-colors cursor-pointer ${
-              currentPath === "/" || currentPath.endsWith("dashboard") || currentPath === "/driver/my-deliveries"
+            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-lg transition-colors cursor-pointer ${currentPath === "/" || currentPath.endsWith("dashboard") || currentPath === "/driver/my-deliveries"
                 ? "bg-blue-600 text-white shadow-sm shadow-blue-500/10"
                 : "text-slate-400 hover:text-white hover:bg-slate-800"
-            }`}
+              }`}
           >
             <ClipboardList className="h-4.5 w-4.5" />
             <span>My Dashboard</span>
@@ -155,31 +169,17 @@ export default function App() {
                 setSelectedWorkOrderId(workOrders[0].WorkOrderId);
                 setCurrentPath(`/tracking/${workOrders[0].WorkOrderId}`);
               }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-lg transition-colors cursor-pointer ${
-                currentPath.startsWith("/tracking/")
+              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-lg transition-colors cursor-pointer ${currentPath.startsWith("/tracking/")
                   ? "bg-blue-600 text-white shadow-sm shadow-blue-500/10"
                   : "text-slate-400 hover:text-white hover:bg-slate-800"
-              }`}
+                }`}
             >
               <Truck className="h-4.5 w-4.5" />
               <span>Live Tracker</span>
             </button>
           )}
 
-          <button
-            onClick={() => {
-              const targetId = workOrders[0]?.WorkOrderId || "simulation-context";
-              handleNavigateToPortal(targetId);
-            }}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-lg transition-colors cursor-pointer ${
-              currentPath.startsWith("/subcontractor")
-                ? "bg-blue-600 text-white shadow-sm shadow-blue-500/10"
-                : "text-slate-400 hover:text-white hover:bg-slate-800"
-            }`}
-          >
-            <Mail className="h-4.5 w-4.5" />
-            <span>Partner Portal</span>
-          </button>
+
         </nav>
 
         {/* Profile Footer display in Sidebar - elegant avatar indicator */}
@@ -198,7 +198,7 @@ export default function App() {
 
       {/* Main Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        
+
         {/* Mobile/Tablet Header with beautiful compact buttons */}
         <div className="lg:hidden bg-[#0F172A] text-slate-100 px-4 py-3 sticky top-0 z-35 flex items-center justify-between border-b border-slate-800">
           <div className="flex items-center gap-2">
@@ -235,16 +235,7 @@ export default function App() {
                 <Truck className="h-4 w-4" />
               </button>
             )}
-            <button
-              onClick={() => {
-                const targetId = workOrders[0]?.WorkOrderId || "simulation-context";
-                handleNavigateToPortal(targetId);
-              }}
-              className="p-2 hover:bg-slate-800 rounded-lg text-slate-300"
-              title="Partner Portal"
-            >
-              <Mail className="h-4 w-4" />
-            </button>
+
           </div>
         </div>
 
@@ -255,8 +246,8 @@ export default function App() {
               {currentPath === "/" || currentPath.endsWith("dashboard") || currentPath === "/driver/my-deliveries"
                 ? "Project Control Room"
                 : currentPath.startsWith("/tracking/")
-                ? "Live Orbit Tracking Desk"
-                : "Partner Production Gateway"}
+                  ? "Live Orbit Tracking Desk"
+                  : "Partner Production Gateway"}
             </h2>
             <span className="bg-emerald-50 text-emerald-700 border border-emerald-100 px-2.5 py-0.5 rounded-full text-[10px] font-semibold flex items-center gap-1.5 leading-none shrink-0">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
@@ -292,6 +283,20 @@ export default function App() {
               >
                 <RefreshCw className="h-3.5 w-3.5" />
               </button>
+              <button
+                onClick={async () => {
+                  if (window.confirm("Are you sure you want to reset the mock database? All testing data will be lost.")) {
+                    await fetch("/api/reset", { method: "POST" });
+                    syncDatabase();
+                    setSuccessText("Database successfully reset to mock defaults.");
+                    setTimeout(() => setSuccessText(""), 3000);
+                  }
+                }}
+                title="Reset Database to Mock Defaults"
+                className="rounded-lg p-1.5 hover:bg-rose-100 bg-white border border-slate-150 text-rose-500 transition-colors cursor-pointer"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+              </button>
             </div>
           </div>
         </header>
@@ -310,7 +315,7 @@ export default function App() {
 
         {/* Sleek slate content area with off-white background */}
         <main className="flex-1 bg-[#F8FAFC] w-full px-4 py-8 sm:px-8 overflow-y-auto">
-          
+
           {/* Render Views dynamic matching Router Path state */}
           {currentPath === "/" || currentPath.endsWith("dashboard") ? (
             currentUser.role === "SUPER_ADMIN" ? (
@@ -351,6 +356,7 @@ export default function App() {
               <ProjectOwnerDashboard
                 projects={projects}
                 processes={processes}
+                users={allUsers.length > 0 ? allUsers : usersList}
                 currentUser={currentUser}
                 onAcknowledgeProject={async (id) => {
                   await fetch(`/api/processes?projectId=${id}`); // Trigger list preps
@@ -400,6 +406,14 @@ export default function App() {
                   setTimeout(() => setSuccessText(""), 3000);
                   syncDatabase();
                 }}
+                onUpdateStatus={async (woId, status) => {
+                  await fetch("/api/work-orders/" + woId + "/status", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ status })
+                  });
+                  syncDatabase();
+                }}
                 onViewWo={(woId) => {
                   setSelectedWorkOrderId(woId);
                   setCurrentPath(`/tracking/${woId}`);
@@ -409,7 +423,7 @@ export default function App() {
               <InventoryOwnerDashboard
                 workOrders={workOrders}
                 inventory={inventory}
-                users={usersList}
+                users={allUsers.length > 0 ? allUsers : usersList}
                 onPrepareDispatch={async (woId) => {
                   await fetch("/api/dispatch/create", {
                     method: "POST",
@@ -418,11 +432,11 @@ export default function App() {
                   });
                   syncDatabase();
                 }}
-                onAssignDriver={async (dispId, driverId) => {
+                onAssignDriver={async (dispId, driverId, vehicleNo) => {
                   await fetch(`/api/dispatch/${dispId}/assign-driver`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ DriverId: driverId })
+                    body: JSON.stringify({ DriverId: driverId, VehicleNumber: vehicleNo })
                   });
                   syncDatabase();
                 }}
@@ -482,18 +496,6 @@ export default function App() {
               subcontractors={subcontractors}
               users={usersList}
             />
-          ) : currentPath.startsWith("/subcontractor/portal") ? (
-            <SubcontractorPortalView
-              workOrderId={selectedWorkOrderId || workOrders[0]?.WorkOrderId}
-              onAcknowledge={async (woId) => {
-                await fetch(`/api/subcontractor/work-orders/${woId}/acknowledge`, { method: "POST" });
-                syncDatabase();
-              }}
-              onComplete={async (woId) => {
-                await fetch(`/api/subcontractor/work-orders/${woId}/complete`, { method: "POST" });
-                syncDatabase();
-              }}
-            />
           ) : currentPath === "/driver/my-deliveries" ? (
             <DriverDashboard
               currentUser={currentUser}
@@ -535,7 +537,6 @@ export default function App() {
         {/* Floating Drawer System */}
         <NotificationsDrawer
           userId={currentUser.id}
-          onNavigateToPortal={handleNavigateToPortal}
         />
 
         {/* Footer */}
@@ -599,7 +600,7 @@ function SuperAdminDashboard({ projects, workOrders, subcontractors, onApprovePr
 
   return (
     <div className="space-y-8 animate-fade-in">
-      
+
       {/* Banner introduction */}
       <div className="bg-slate-900 rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-xl">
         <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] opacity-25" />
@@ -641,7 +642,7 @@ function SuperAdminDashboard({ projects, workOrders, subcontractors, onApprovePr
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         {/* Left approvals */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xs">
@@ -719,7 +720,7 @@ function SuperAdminDashboard({ projects, workOrders, subcontractors, onApprovePr
                 <tbody className="divide-y divide-slate-100">
                   {workOrders.map((wo) => {
                     const sub = subcontractors.find((s) => s.SubcontractorId === wo.SubcontractorId);
-                    
+
                     return (
                       <tr key={wo.WorkOrderId} className="hover:bg-slate-50/50 transition-colors">
                         <td className="py-3.5 pr-3">
@@ -736,17 +737,16 @@ function SuperAdminDashboard({ projects, workOrders, subcontractors, onApprovePr
                         </td>
                         <td className="py-3.5">
                           <span
-                            className={`rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase ${
-                              wo.Status === "7_Completed"
+                            className={`rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase ${wo.Status === "7_Completed"
                                 ? "bg-emerald-100 text-emerald-800"
                                 : wo.Status === "2_InTransit_ToSubcontractor"
-                                ? "bg-indigo-100 text-indigo-800 animate-pulse"
-                                : wo.Status === "4_InProcessAtSubcontractor"
-                                ? "bg-amber-100 text-amber-800"
-                                : wo.Status === "PulledBack"
-                                ? "bg-rose-100 text-rose-800"
-                                : "bg-slate-100 text-slate-600"
-                            }`}
+                                  ? "bg-indigo-100 text-indigo-800 animate-pulse"
+                                  : wo.Status === "4_InProcessAtSubcontractor"
+                                    ? "bg-amber-100 text-amber-800"
+                                    : wo.Status === "PulledBack"
+                                      ? "bg-rose-100 text-rose-800"
+                                      : "bg-slate-100 text-slate-600"
+                              }`}
                           >
                             {wo.Status.replace(/^\d_/, "").replace(/_/g, " ")}
                           </span>
@@ -775,7 +775,7 @@ function SuperAdminDashboard({ projects, workOrders, subcontractors, onApprovePr
             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">
               Monthly Dispatch Rate metrics
             </h4>
-            
+
             <div className="space-y-4">
               <div>
                 <div className="flex justify-between text-xs font-semibold mb-1">
@@ -886,11 +886,12 @@ function AdminDashboard({ projects, subcontractors, users, onOnboardProject, onO
   const [subPhone, setSubPhone] = useState("");
   const [subAddr, setSubAddr] = useState("");
   const [subProcesses, setSubProcesses] = useState("Knitting");
+  const [pdfFiles, setPdfFiles] = useState<FileList | null>(null);
 
-  // Onboard Project trigger
-  const handleOnboardProjectSubmit = async (e: any) => {
+  // Combined Onboard Project & Process trigger
+  const handleCombinedSubmit = async (e: any) => {
     e.preventDefault();
-    if (!projName || !custName) return;
+    if (!projName || !custName || !procName) return;
 
     // Parse milestone comma sets
     const parsedTimeline = milestones.split(",").map((m) => {
@@ -902,7 +903,7 @@ function AdminDashboard({ projects, subcontractors, users, onOnboardProject, onO
     });
 
     try {
-      const res = await fetch("/api/projects", {
+      const projRes = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -915,42 +916,34 @@ function AdminDashboard({ projects, subcontractors, users, onOnboardProject, onO
         })
       });
 
-      if (res.ok) {
-        setProjName("");
-        setCustName("");
-        setInstruction("");
-        onOnboardProject();
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
+      if (projRes.ok) {
+        const newProj = await projRes.json();
 
-  // Onboard Process trigger
-  const handleOnboardProcessSubmit = async (e: any) => {
-    e.preventDefault();
-    if (!procProjId || !procName) return;
+        const procRes = await fetch("/api/processes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ProjectId: newProj.ProjectId,
+            ProcessName: procName,
+            ProcessType: procType,
+            ProcessInstruction: procInstruction,
+            ExpectedDeliveryDays: Number(deliveryDays),
+            Priority: priority,
+            ProcessOwnerId: procOwner,
+            QCRequired: qcRequired
+          })
+        });
 
-    try {
-      const res = await fetch("/api/processes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ProjectId: procProjId,
-          ProcessName: procName,
-          ProcessType: procType,
-          ProcessInstruction: procInstruction,
-          ExpectedDeliveryDays: Number(deliveryDays),
-          Priority: "Medium",
-          ProcessOwnerId: procOwner,
-          QCRequired: qcRequired
-        })
-      });
-
-      if (res.ok) {
-        setProcName("");
-        setProcInstruction("");
-        onOnboardProcess();
+        if (procRes.ok) {
+          setProjName("");
+          setCustName("");
+          setInstruction("");
+          setProcName("");
+          setProcInstruction("");
+          setPdfFiles(null);
+          onOnboardProject();
+          onOnboardProcess();
+        }
       }
     } catch (e) {
       console.error(e);
@@ -1005,193 +998,181 @@ function AdminDashboard({ projects, subcontractors, users, onOnboardProject, onO
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
-        {/* Onboard Project Form */}
+      <div className="grid grid-cols-1 gap-8">
+
+        {/* Combined Onboard Project & Process Form */}
         <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xs space-y-4">
-          <h3 className="text-sm font-bold text-slate-800 tracking-tight flex items-center gap-1.5">
+          <h3 className="text-sm font-bold text-slate-800 tracking-tight flex items-center gap-1.5 border-b border-slate-100 pb-2">
             <Plus className="h-4.5 w-4.5 text-slate-650" />
-            Phase 1: Project Contract Onboarding Form
+            Unified Project & First Process Onboarding Form
           </h3>
 
-          <form onSubmit={handleOnboardProjectSubmit} className="space-y-4 text-xs">
-            <div>
-              <label className="block text-slate-500 mb-1 font-semibold">Garment Project Name</label>
-              <input
-                type="text"
-                placeholder="e.g. Summer Knitwear Collection 2026"
-                value={projName}
-                onChange={(e) => setProjName(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-205 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900 text-slate-800 font-bold"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleCombinedSubmit} className="space-y-6 text-xs">
+            <div className="space-y-4">
+              <h4 className="font-bold text-indigo-700 uppercase tracking-widest text-[10px]">Project Details</h4>
               <div>
-                <label className="block text-slate-500 mb-1 font-semibold">Customer / Brand Name</label>
+                <label className="block text-slate-500 mb-1 font-semibold">Garment Project Name</label>
                 <input
                   type="text"
-                  placeholder="e.g. Nike Wear India"
-                  value={custName}
-                  onChange={(e) => setCustName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-205 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900 text-slate-800 font-semibold"
+                  placeholder="e.g. Summer Knitwear Collection 2026"
+                  value={projName}
+                  onChange={(e) => setProjName(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-205 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900 text-slate-800 font-bold"
                   required
                 />
               </div>
-              <div>
-                <label className="block text-slate-500 mb-1 font-semibold">Assign Project Owner Lead</label>
-                <select
-                  value={ownerId}
-                  onChange={(e) => setOwnerId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-201 rounded-lg px-3 py-2 text-slate-805 font-bold"
-                >
-                  <option value="user-3">Ramesh ProjectHead (Lead)</option>
-                  <option value="user-4">Senthil Operations</option>
-                </select>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-500 mb-1 font-semibold">Customer / Brand Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Nike Wear India"
+                    value={custName}
+                    onChange={(e) => setCustName(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-205 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900 text-slate-800 font-semibold"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-500 mb-1 font-semibold">Assign Project Owner Lead</label>
+                  <select
+                    value={ownerId}
+                    onChange={(e) => setOwnerId(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-201 rounded-lg px-3 py-2 text-slate-805 font-bold"
+                  >
+                    <option value="user-3">Project Owner (po1@company.com)</option>
+                  </select>
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label className="block text-slate-500 mb-1 font-semibold">Customer Special Instructions (Rich Content)</label>
-              <textarea
-                rows={3}
-                placeholder="Double ventilation stitches on rib hem. Non bleaching reactive dyes only."
-                value={instruction}
-                onChange={(e) => setInstruction(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-205 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900"
-              />
-            </div>
-
-            <div>
-              <label className="block text-slate-500 mb-1 font-semibold">Milestone Calendars (Formatted text comma sets)</label>
-              <input
-                type="text"
-                placeholder="Knitting Completion:2026-06-30, Dyeing Batch:2026-07-20"
-                value={milestones}
-                onChange={(e) => setMilestones(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-205 rounded-lg px-3 py-2 text-slate-800 font-mono"
-              />
-              <span className="text-[10px] text-slate-400 mt-1 block">Specify matching milestone dates (MilestoneName:yyyy-mm-dd, MilestoneName:yyyy-mm-dd)</span>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-slate-900 hover:bg-slate-800 text-white py-2.5 font-bold text-center rounded-xl transition duration-150 cursor-pointer"
-            >
-              Submit Project for approval to MD SuperAdmin
-            </button>
-          </form>
-        </div>
-
-        {/* Onboard Process Form */}
-        <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xs space-y-4">
-          <h3 className="text-sm font-bold text-slate-800 tracking-tight flex items-center gap-1.5">
-            <Plus className="h-4.5 w-4.5 text-slate-650" />
-            Phase 2: Add Sub-Process to Approved Project
-          </h3>
-
-          <form onSubmit={handleOnboardProcessSubmit} className="space-y-4 text-xs">
-            <div>
-              <label className="block text-slate-500 mb-1 font-semibold">Select Parent Approved Project</label>
-              <select
-                value={procProjId}
-                onChange={(e) => setProcProjId(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-201 rounded-lg px-3 py-2 text-slate-805 font-bold"
-                required
-              >
-                <option value="">-- Choose Project Contract --</option>
-                {projects.filter(p => p.Status === "Approved" || p.Status === "InProgress").map((p) => (
-                  <option key={p.ProjectId} value={p.ProjectId}>
-                    {p.ProjectName} ({p.ProjectCode}) - {p.Status}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-slate-500 mb-1 font-semibold">Specific sub-process Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Royal Blue Weaving"
-                  value={procName}
-                  onChange={(e) => setProcName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-205 rounded-lg px-3 py-2 focus:outline-none text-slate-800 font-semibold"
-                  required
+                <label className="block text-slate-500 mb-1 font-semibold">Customer Special Instructions</label>
+                <textarea
+                  rows={2}
+                  placeholder="Double ventilation stitches on rib hem. Non bleaching reactive dyes only."
+                  value={instruction}
+                  onChange={(e) => setInstruction(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-205 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900"
                 />
               </div>
-              <div>
-                <label className="block text-slate-500 mb-1 font-semibold">Process Category Type</label>
-                <select
-                  value={procType}
-                  onChange={(e) => setProcType(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-201 rounded-lg px-3 py-2 text-slate-805"
-                >
-                  <option value="Knitting">Knitting</option>
-                  <option value="Dyeing">Dyeing</option>
-                  <option value="Cutting">Cutting</option>
-                  <option value="Printing">Printing</option>
-                  <option value="Embroidery">Embroidery</option>
-                  <option value="Stitching">Stitching</option>
-                  <option value="Packing">Packing</option>
-                </select>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-slate-500 mb-1 font-semibold">Target Production Days</label>
+                <label className="block text-slate-500 mb-1 font-semibold">Order Instructions</label>
                 <input
-                  type="number"
-                  value={deliveryDays}
-                  onChange={(e) => setDeliveryDays(Number(e.target.value))}
+                  type="file"
+                  multiple
+                  accept="application/pdf"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 2) {
+                      alert("You can only upload up to 2 PDFs.");
+                      e.target.value = "";
+                      setPdfFiles(null);
+                    } else {
+                      setPdfFiles(e.target.files);
+                    }
+                  }}
+                  className="w-full bg-slate-50 border border-slate-205 rounded-lg px-3 py-2 text-slate-800"
+                />
+                <span className="text-[10px] text-slate-400 mt-1 block">Please attach the instructions and QC documents.</span>
+              </div>
+
+              <div>
+                <label className="block text-slate-500 mb-1 font-semibold">Milestone Calendars</label>
+                <input
+                  type="text"
+                  placeholder="Knitting Completion:2026-06-30, Dyeing Batch:2026-07-20"
+                  value={milestones}
+                  onChange={(e) => setMilestones(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-205 rounded-lg px-3 py-2 text-slate-800 font-mono"
-                  min={1}
                 />
               </div>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t border-slate-100">
+              <h4 className="font-bold text-emerald-700 uppercase tracking-widest text-[10px]">Initial Process Details</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-500 mb-1 font-semibold">First sub-process Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Royal Blue Weaving"
+                    value={procName}
+                    onChange={(e) => setProcName(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-205 rounded-lg px-3 py-2 focus:outline-none text-slate-800 font-semibold"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-500 mb-1 font-semibold">Process Category Type</label>
+                  <select
+                    value={procType}
+                    onChange={(e) => setProcType(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-201 rounded-lg px-3 py-2 text-slate-805"
+                  >
+                    <option value="Knitting">Knitting</option>
+                    <option value="Dyeing">Dyeing</option>
+                    <option value="Cutting">Cutting</option>
+                    <option value="Printing">Printing</option>
+                    <option value="Embroidery">Embroidery</option>
+                    <option value="Stitching">Stitching</option>
+                    <option value="Packing">Packing</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-500 mb-1 font-semibold">Target Production Days</label>
+                  <input
+                    type="number"
+                    value={deliveryDays}
+                    onChange={(e) => setDeliveryDays(Number(e.target.value))}
+                    className="w-full bg-slate-50 border border-slate-205 rounded-lg px-3 py-2 text-slate-800 font-mono"
+                    min={1}
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-500 mb-1 font-semibold">Assign Process Lead Owner</label>
+                  <select
+                    value={procOwner}
+                    onChange={(e) => setProcOwner(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-201 rounded-lg px-3 py-2 text-slate-805 font-bold"
+                  >
+                    <option value="user-5">Process Owner (pro1@company.com)</option>
+                  </select>
+                </div>
+              </div>
+
               <div>
-                <label className="block text-slate-500 mb-1 font-semibold">Assign Process Lead Owner</label>
-                <select
-                  value={procOwner}
-                  onChange={(e) => setProcOwner(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-201 rounded-lg px-3 py-2 text-slate-805 font-bold"
-                >
-                  <option value="user-5">Arun Knitting-Owner</option>
-                  <option value="user-6">Karthik Dyeing-Owner</option>
-                  <option value="user-7">Ravi Stitching-Owner</option>
-                </select>
+                <label className="block text-slate-500 mb-1 font-semibold text-slate-800 font-bold flex items-center gap-1.5 self-center">
+                  <input
+                    type="checkbox"
+                    checked={qcRequired}
+                    onChange={(e) => setQcRequired(e.target.checked)}
+                    className="rounded border-slate-200 h-4.5 w-4.5"
+                  />
+                  Strict Quality Check and Lab-testing (QC) Required
+                </label>
               </div>
-            </div>
 
-            <div>
-              <label className="block text-slate-500 mb-1 font-semibold text-slate-800 font-bold flex items-center gap-1.5 self-center">
+              <div>
+                <label className="block text-slate-500 mb-1 font-semibold">Process Processing instructions</label>
                 <input
-                  type="checkbox"
-                  checked={qcRequired}
-                  onChange={(e) => setQcRequired(e.target.checked)}
-                  className="rounded border-slate-200 h-4.5 w-4.5"
+                  type="text"
+                  placeholder="Weave structured knitting pique structure 220 GSM thick knit only."
+                  value={procInstruction}
+                  onChange={(e) => setProcInstruction(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-205 rounded-lg px-3 py-2 text-slate-800"
                 />
-                Strict Quality Check and Lab-testing (QC) Required
-              </label>
-            </div>
-
-            <div>
-              <label className="block text-slate-500 mb-1 font-semibold">Process Processing instructions</label>
-              <input
-                type="text"
-                placeholder="Weave structured knitting pique structure 220 GSM thick knit only."
-                value={procInstruction}
-                onChange={(e) => setProcInstruction(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-205 rounded-lg px-3 py-2 text-slate-800"
-              />
+              </div>
             </div>
 
             <button
               type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 font-bold text-center rounded-xl transition duration-150 cursor-pointer"
+              className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 font-bold text-center rounded-xl transition duration-150 cursor-pointer text-sm"
             >
-              Onboard and Deploy Sub-process
+              Submit Project & Deploy Initial Process
             </button>
           </form>
         </div>
@@ -1222,9 +1203,8 @@ function AdminDashboard({ projects, subcontractors, users, onOnboardProject, onO
                   <td className="py-3 font-semibold text-slate-800">{p.ProjectName}</td>
                   <td className="py-3 text-slate-600">{p.CustomerName}</td>
                   <td className="py-3">
-                    <span className={`rounded-xl px-2 py-0.5 text-[9px] font-bold ${
-                      p.Status === "Approved" ? "bg-slate-900 text-white" : p.Status === "InProgress" ? "bg-indigo-100 text-indigo-805" : "bg-slate-100 text-slate-600"
-                    }`}>
+                    <span className={`rounded-xl px-2 py-0.5 text-[9px] font-bold ${p.Status === "Approved" ? "bg-slate-900 text-white" : p.Status === "InProgress" ? "bg-indigo-100 text-indigo-805" : "bg-slate-100 text-slate-600"
+                      }`}>
                       {p.Status}
                     </span>
                   </td>
@@ -1246,16 +1226,17 @@ function AdminDashboard({ projects, subcontractors, users, onOnboardProject, onO
 interface ProjectOwnerProps {
   projects: Project[];
   processes: Process[];
+  users: User[];
   currentUser: User;
   onAcknowledgeProject: (id: string) => Promise<void>;
   onAssignProcessOwner: () => void;
 }
 
-function ProjectOwnerDashboard({ projects, processes, currentUser, onAcknowledgeProject, onAssignProcessOwner }: ProjectOwnerProps) {
+function ProjectOwnerDashboard({ projects, processes, users, currentUser, onAcknowledgeProject, onAssignProcessOwner }: ProjectOwnerProps) {
   const [assigningProcId, setAssigningProcId] = useState<string | null>(null);
   const [assignedLeadId, setAssignedLeadId] = useState("user-5");
 
-  const myProjects = projects.filter((p) => p.ProjectOwnerId === currentUser.id);
+  const myProjects = projects.filter((p) => p.ProjectOwnerId === currentUser.id && (p.Status === "Approved" || p.Status === "InProgress"));
 
   const handleOwnerAssignment = async (e: any) => {
     e.preventDefault();
@@ -1278,7 +1259,7 @@ function ProjectOwnerDashboard({ projects, processes, currentUser, onAcknowledge
   };
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8">
       <div className="bg-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] opacity-25" />
         <span className="rounded-full bg-slate-800 border border-slate-700 px-3 py-1 text-xs text-indigo-400 font-mono uppercase font-bold">
@@ -1291,7 +1272,7 @@ function ProjectOwnerDashboard({ projects, processes, currentUser, onAcknowledge
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        
+
         {myProjects.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-150 p-12 text-center text-slate-500">
             No projects currently assigned. Select "Ramesh ProjectHead" or "Senthil Operations" mock role.
@@ -1348,9 +1329,8 @@ function ProjectOwnerDashboard({ projects, processes, currentUser, onAcknowledge
                                 {proc.ProcessType}
                               </span>
                             </div>
-                            <span className={`text-[9px] font-bold uppercase rounded px-2 py-0.5 ${
-                              proc.Status === "Completed" ? "bg-emerald-100 text-emerald-800" : "bg-indigo-100 text-indigo-800"
-                            }`}>
+                            <span className={`text-[9px] font-bold uppercase rounded px-2 py-0.5 ${proc.Status === "Completed" ? "bg-emerald-100 text-emerald-800" : "bg-indigo-100 text-indigo-800"
+                              }`}>
                               {proc.Status}
                             </span>
                           </div>
@@ -1358,12 +1338,13 @@ function ProjectOwnerDashboard({ projects, processes, currentUser, onAcknowledge
                           <p className="text-[11px] text-slate-500">Target duration: <span className="font-bold">{proc.ExpectedDeliveryDays} days</span></p>
 
                           <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                            <span className="text-[10px] text-slate-400">Owner Assigned: {proc.ProcessOwnerId === "user-5" ? "Arun Knitting" : "Karthik Dyeing"}</span>
+                            <span className="text-[10px] text-slate-400">Owner Assigned: {proc.ProcessOwnerId === "user-5" ? "Arun Knitting" : proc.ProcessOwnerId === "user-6" ? "Karthik Dyeing" : "Unassigned"}</span>
                             <button
+                              type="button"
                               onClick={() => setAssigningProcId(proc.ProcessId)}
                               className="text-[10px] text-indigo-650 hover:underline font-bold"
                             >
-                              Reassign Owner
+                              {proc.ProcessOwnerId ? "Reassign Owner" : "Assign Owner"}
                             </button>
                           </div>
                         </div>
@@ -1391,9 +1372,9 @@ function ProjectOwnerDashboard({ projects, processes, currentUser, onAcknowledge
                   onChange={(e) => setAssignedLeadId(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-201 rounded-lg px-3 py-2 text-slate-805"
                 >
-                  <option value="user-5">Arun Knitting-Owner</option>
-                  <option value="user-6">Karthik Dyeing-Owner</option>
-                  <option value="user-7">Ravi Stitching-Owner</option>
+                  {users.filter(u => u.role === "PROCESS_OWNER").map(u => (
+                    <option key={u.id} value={u.id}>{u.name}</option>
+                  ))}
                 </select>
               </div>
 
@@ -1434,9 +1415,10 @@ interface ProcessOwnerProps {
   onPullBackOrder: (woId: string, data: any) => Promise<void>;
   onAssignReturnPickup: (woId: string, driverId: string) => Promise<void>;
   onViewWo: (woId: string) => void;
+  onUpdateStatus: (woId: string, status: string) => Promise<void>;
 }
 
-function ProcessOwnerDashboard({ processes, subcontractors, workOrders, currentUser, onStartProcess, onRaiseWorkOrder, onPullBackOrder, onAssignReturnPickup, onViewWo }: ProcessOwnerProps) {
+function ProcessOwnerDashboard({ processes, subcontractors, workOrders, currentUser, onStartProcess, onRaiseWorkOrder, onPullBackOrder, onAssignReturnPickup, onViewWo, onUpdateStatus }: ProcessOwnerProps) {
   const [activeProcessId, setActiveProcessId] = useState<string | null>(null);
   const [selectedSubId, setSelectedSubId] = useState("");
   const [matName, setMatName] = useState("Grey Yarn 40s combed");
@@ -1511,11 +1493,11 @@ function ProcessOwnerDashboard({ processes, subcontractors, workOrders, currentU
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
+
         {/* Left: processes and orders */}
         <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xs space-y-4">
           <h3 className="text-sm font-bold text-slate-850 tracking-tight">Assigned Subproduction Lines</h3>
-          
+
           {myProcesses.length === 0 ? (
             <div className="text-slate-550 text-xs py-8 text-center italic">
               No processing steps currently assigned to this mock lead. Swap process person.
@@ -1570,7 +1552,7 @@ function ProcessOwnerDashboard({ processes, subcontractors, workOrders, currentU
                           }}
                           className="rounded-lg bg-indigo-600 hover:bg-indigo-700 font-bold text-white px-3.5 py-1.5 cursor-pointer"
                         >
-                          Place Dispatch Work Order
+                          Raise Material Request to Store
                         </button>
                       )}
 
@@ -1592,9 +1574,9 @@ function ProcessOwnerDashboard({ processes, subcontractors, workOrders, currentU
           {activeProcessId ? (
             <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xs space-y-4 animate-slide-up">
               <h3 className="text-sm font-bold text-slate-850 border-b border-slate-50 pb-2">
-                Deploy Materials Work Order
+                Raise Material Request
               </h3>
-              
+
               <form onSubmit={handleRaiseOrderSubmit} className="space-y-4 text-xs">
                 <div>
                   <label className="block text-slate-500 mb-1 font-semibold">Verify subcontractor Destination</label>
@@ -1652,7 +1634,7 @@ function ProcessOwnerDashboard({ processes, subcontractors, workOrders, currentU
                   type="submit"
                   className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl transition duration-150 cursor-pointer text-center"
                 >
-                  Confirm & Raise WO (Notify Stores)
+                  Confirm & Request Materials from Store
                 </button>
               </form>
             </div>
@@ -1663,14 +1645,13 @@ function ProcessOwnerDashboard({ processes, subcontractors, workOrders, currentU
               <div className="space-y-3">
                 {workOrders.map((wo) => {
                   const sub = subcontractors.find((s) => s.SubcontractorId === wo.SubcontractorId);
-                  
+
                   return (
                     <div key={wo.WorkOrderId} className="border border-slate-100 p-4 rounded-xl space-y-2 text-xs">
                       <div className="flex justify-between items-center">
                         <span className="font-bold text-slate-900 font-mono text-[13px]">{wo.WorkOrderCode}</span>
-                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
-                          wo.Status === "7_Completed" ? "bg-emerald-100 text-emerald-805" : "bg-indigo-50 text-indigo-700"
-                        }`}>
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${wo.Status === "7_Completed" ? "bg-emerald-100 text-emerald-805" : "bg-indigo-50 text-indigo-700"
+                          }`}>
                           {wo.Status}
                         </span>
                       </div>
@@ -1695,6 +1676,48 @@ function ProcessOwnerDashboard({ processes, subcontractors, workOrders, currentU
                               className="rounded bg-slate-900 text-white font-bold py-1 px-2.5 text-[10px] cursor-pointer"
                             >
                               Assign Porter Pickup
+                            </button>
+                          )}
+
+                          {wo.Status === "3_ReceivedBySubcontractor" && (
+                            <button
+                              onClick={() => onUpdateStatus(wo.WorkOrderId, "4_InProcessAtSubcontractor")}
+                              className="rounded border border-indigo-300 hover:bg-indigo-50 text-indigo-700 font-bold py-1 px-2.5 text-[10px] cursor-pointer"
+                            >
+                              Confirm Processing Started
+                            </button>
+                          )}
+                          {wo.Status === "4_InProcessAtSubcontractor" && (
+                            <button
+                              onClick={() => onUpdateStatus(wo.WorkOrderId, "4.5_ProcessCompleted")}
+                              className="rounded border border-emerald-300 hover:bg-emerald-50 text-emerald-700 font-bold py-1 px-2.5 text-[10px] cursor-pointer"
+                            >
+                              Mark Process Completed
+                            </button>
+                          )}
+
+                          {wo.Status === "4.5_ProcessCompleted" && (
+                            <button
+                              onClick={async () => {
+                                await fetch("/api/return/create", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ WorkOrderId: wo.WorkOrderId })
+                                });
+                                window.location.reload();
+                              }}
+                              className="rounded bg-slate-900 hover:bg-slate-800 text-white font-bold py-1 px-2.5 text-[10px] cursor-pointer"
+                            >
+                              Create Material Pickup Request
+                            </button>
+                          )}
+
+                          {wo.Status === "6_ReceivedAtCompanyStore" && (
+                            <button
+                              onClick={() => onUpdateStatus(wo.WorkOrderId, "7_Completed")}
+                              className="rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1 px-3 text-[10px] cursor-pointer shadow-md"
+                            >
+                              Close Process (Finalize)
                             </button>
                           )}
 
@@ -1729,7 +1752,7 @@ function ProcessOwnerDashboard({ processes, subcontractors, workOrders, currentU
               <AlertTriangle className="h-5 w-5" />
               <h4>Emergency Handover Pullback Action</h4>
             </div>
-            
+
             <p className="text-slate-500">
               This initiates a rapid inventory recall. Reclaims ownership stamps & automatically submits materials for alternate subcontracting.
             </p>
@@ -1800,8 +1823,6 @@ function ProcessOwnerDashboard({ processes, subcontractors, workOrders, currentU
                   className="w-full bg-slate-50 border border-slate-201 rounded-lg px-3 py-2 font-bold"
                 >
                   <option value="user-9">Venkatesh Porter (+91 9361112222)</option>
-                  <option value="user-10">Muthu Logistics (+91 9361113333)</option>
-                  <option value="user-11">Gopal Driver Logistics (+91 9361114444)</option>
                 </select>
               </div>
 
@@ -1837,7 +1858,7 @@ interface InventoryProps {
   inventory: InventoryItem[];
   users: any[];
   onPrepareDispatch: (woId: string) => Promise<void>;
-  onAssignDriver: (dispId: string, driverId: string) => Promise<void>;
+  onAssignDriver: (dispId: string, driverId: string, vehicleNo?: string) => Promise<void>;
   onVerifyOTP: (dispId: string, otp: string) => Promise<void>;
   onCompanyOTPConfirm: (retId: string) => Promise<void>;
   onAddStock: (data: any) => Promise<void>;
@@ -1846,7 +1867,7 @@ interface InventoryProps {
 
 function InventoryOwnerDashboard({ workOrders, inventory, users, onPrepareDispatch, onAssignDriver, onVerifyOTP, onCompanyOTPConfirm, onAddStock, onAcknowledgeReceived }: InventoryProps) {
   const [activeTab, setActiveTab] = useState<"pending" | "warehouse" | "returns">("pending");
-  
+
   // Forms state
   const [itemName, setItemName] = useState("");
   const [itemCategory, setItemCategory] = useState<any>("Yarn");
@@ -1856,13 +1877,16 @@ function InventoryOwnerDashboard({ workOrders, inventory, users, onPrepareDispat
 
   const [simulatedOTPInput, setSimulatedOTPInput] = useState<Record<string, string>>({});
   const [selectedDriver, setSelectedDriver] = useState<Record<string, string>>({});
+  const [vehicleNumber, setVehicleNumber] = useState<Record<string, string>>({});
+
+  const [selectedModalOrder, setSelectedModalOrder] = useState<WorkOrder | null>(null);
 
   const [dispatches, setDispatches] = useState<any[]>([]);
   const [returnRecs, setReturnRecs] = useState<any[]>([]);
 
   const fetchDispatches = async () => {
     try {
-      const res = await fetch("/api/driver/my-deliveries"); // Fetch all assigned
+      const res = await fetch("/api/dispatches"); // Fetch all dispatches for Store Owner dashboard
       if (res.ok) setDispatches(await res.json());
 
       const retRes = await fetch("/api/return/history");
@@ -1916,11 +1940,10 @@ function InventoryOwnerDashboard({ workOrders, inventory, users, onPrepareDispat
           <button
             key={tab.code}
             onClick={() => setActiveTab(tab.code as any)}
-            className={`py-3 px-5 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
-              activeTab === tab.code
+            className={`py-3 px-5 text-xs font-semibold border-b-2 transition-all cursor-pointer ${activeTab === tab.code
                 ? "border-slate-900 text-slate-900 font-bold"
                 : "border-transparent text-slate-400 hover:text-slate-850"
-            }`}
+              }`}
           >
             {tab.label}
           </button>
@@ -1936,97 +1959,29 @@ function InventoryOwnerDashboard({ workOrders, inventory, users, onPrepareDispat
               No outstanding dispatch preparation requests logged. Complete "Raise Work Order" from Process Owner.
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {pendingDispatches.map((wo) => {
                 const activeDisp = dispatches.find((d) => d.workOrder?.WorkOrderId === wo.WorkOrderId)?.dispatch;
-                const driverSelected = selectedDriver[wo.WorkOrderId] || "user-9";
+                const statusBadge = activeDisp
+                  ? <span className="rounded bg-indigo-50 text-indigo-800 text-[9px] px-1.5 py-0.5 font-bold border border-indigo-100">Ready to Dispatch</span>
+                  : <span className="rounded bg-rose-50 text-rose-800 text-[9px] px-1.5 py-0.5 font-bold border border-rose-100">Awaiting Prep</span>;
 
                 return (
-                  <div key={wo.WorkOrderId} className="py-4 first:pt-0 last:pb-0 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-extrabold text-slate-900 font-mono text-[13px]">{wo.WorkOrderCode}</span>
-                        <span className="rounded bg-rose-50 text-rose-800 text-[9px] px-1.5 py-0.5 font-bold">
-                          Awaiting Prep
-                        </span>
-                      </div>
-                      <p className="text-slate-500 mt-1">Target Quantity: <span className="font-bold text-slate-800">{wo.TotalQuantity} {wo.Unit}</span></p>
-                      <div className="mt-2 space-y-1">
-                        {wo.MaterialDetails.map((mat) => {
-                          const stockItem = inventory.find(i => i.ItemId === mat.ItemId);
-                          const isLow = (stockItem?.AvailableQuantity || 0) < mat.Quantity;
-                          return (
-                            <span key={mat.ItemId} className="block text-[10px] text-slate-400 font-mono">
-                              - Required {mat.ItemName}: {mat.Quantity} {mat.Unit} ({stockItem ? `${stockItem.AvailableQuantity} available` : "No stock"}) 
-                              {isLow && <span className="text-rose-600 font-bold"> - INSUFFICIENT STOCK!</span>}
-                            </span>
-                          );
-                        })}
-                      </div>
+                  <div
+                    key={wo.WorkOrderId}
+                    onClick={() => setSelectedModalOrder(wo)}
+                    className="border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md cursor-pointer hover:border-slate-300 transition-all bg-slate-50/50 flex flex-col gap-3"
+                  >
+                    <div className="flex justify-between items-start">
+                      <span className="font-extrabold text-slate-900 font-mono text-[13px]">{wo.WorkOrderCode}</span>
+                      {statusBadge}
                     </div>
-
-                    <div className="space-y-2">
-                      {!activeDisp ? (
-                        <button
-                          onClick={() => onPrepareDispatch(wo.WorkOrderId)}
-                          className="rounded-lg bg-slate-900 hover:bg-slate-800 font-bold text-white py-2 px-4 transition-colors duration-150 cursor-pointer"
-                        >
-                          Step 1: Mark Package Prepared
-                        </button>
-                      ) : (
-                        <div className="space-y-4">
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-650 font-semibold uppercase text-[10px]">Step 2: Assign Porter Driver:</span>
-                            <select
-                              value={driverSelected}
-                              onChange={(e) => setSelectedDriver({ ...selectedDriver, [wo.WorkOrderId]: e.target.value })}
-                              className="bg-slate-50 border border-slate-205 rounded px-2.5 py-1 text-[11px] font-bold"
-                            >
-                              <option value="user-9">Venkatesh Porter Driver</option>
-                              <option value="user-10">Muthu Logistics Porter</option>
-                              <option value="user-11">Gopal Logistics Driver</option>
-                            </select>
-                          </div>
-                          
-                          <button
-                            onClick={() => onAssignDriver(activeDisp.DispatchId, driverSelected)}
-                            className="text-xs font-bold text-indigo-650 hover:underline cursor-pointer"
-                          >
-                            Assign selected Driver & Issue Secure OTP Check
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      {activeDisp && activeDisp.DispatchOTP && (
-                        <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-4 space-y-2">
-                          <p className="font-semibold text-slate-500 uppercase text-[9px] tracking-wider">Step 3: Secure Porter Dispatch OTP:</p>
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg font-mono font-bold font-semibold bg-slate-900 text-white rounded-md px-3 py-1 select-all tracking-widest border border-slate-800">
-                              {activeDisp.DispatchOTP}
-                            </span>
-                            <span className="text-[10px] text-slate-400 font-bold italic">(Provide to Driver upon handover loading)</span>
-                          </div>
-
-                          <div className="border-t border-slate-101 pt-2.5 flex flex-col gap-1.5">
-                            <input
-                              type="text"
-                              placeholder="Enter OTP to verify driver loading"
-                              value={simulatedOTPInput[wo.WorkOrderId] || ""}
-                              onChange={(e) => setSimulatedOTPInput({ ...simulatedOTPInput, [wo.WorkOrderId]: e.target.value })}
-                              className="bg-white border rounded px-2.5 py-1.5 focus:outline-none"
-                            />
-                            <button
-                              onClick={() => onVerifyOTP(activeDisp.DispatchId, simulatedOTPInput[wo.WorkOrderId] || "")}
-                              className="text-[11px] font-bold bg-indigo-600 text-white rounded py-1 hover:bg-indigo-700 cursor-pointer"
-                            >
-                              Submit Driver OTP Handwriting Loading Verify
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <p className="text-slate-500 text-[11px] leading-tight flex-1">
+                      Target Quantity: <span className="font-bold text-slate-800">{wo.TotalQuantity} {wo.Unit}</span>
+                    </p>
+                    <button className="text-[10px] font-bold text-indigo-600 bg-white border border-indigo-100 py-1.5 rounded-lg w-full">
+                      Open Dispatch Control
+                    </button>
                   </div>
                 );
               })}
@@ -2037,7 +1992,7 @@ function InventoryOwnerDashboard({ workOrders, inventory, users, onPrepareDispat
 
       {activeTab === "warehouse" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* Inventory lists */}
           <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-150 p-6 shadow-xs space-y-4">
             <h3 className="text-sm font-bold text-slate-800">Raw Combed Weaves & Fabrics</h3>
@@ -2064,10 +2019,13 @@ function InventoryOwnerDashboard({ workOrders, inventory, users, onPrepareDispat
           </div>
 
           {/* Add Stock */}
-          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xs space-y-4 h-max">
-            <h3 className="text-sm font-bold text-slate-805">Adjust Store Balances (Manual Log Add)</h3>
-            
-            <form onSubmit={handleCreateStock} className="space-y-4">
+          <details className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xs space-y-4 h-max group">
+            <summary className="text-sm font-bold text-slate-805 cursor-pointer list-none flex items-center justify-between">
+              Optional: Adjust Store Balances (Manual Log Add)
+              <span className="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+            </summary>
+
+            <form onSubmit={handleCreateStock} className="space-y-4 mt-4">
               <div>
                 <label className="block text-slate-500 mb-1">Item Title</label>
                 <input
@@ -2133,7 +2091,7 @@ function InventoryOwnerDashboard({ workOrders, inventory, users, onPrepareDispat
                 Add Inventory item Log and Deduct Add transaction
               </button>
             </form>
-          </div>
+          </details>
 
         </div>
       )}
@@ -2150,7 +2108,7 @@ function InventoryOwnerDashboard({ workOrders, inventory, users, onPrepareDispat
             <div className="divide-y divide-slate-100">
               {returnRecs.map((ret) => {
                 const wo = workOrders.find((w) => w.WorkOrderId === ret.WorkOrderId);
-                
+
                 return (
                   <div key={ret.ReturnId} className="py-4 first:pt-0 last:pb-0 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                     <div>
@@ -2159,30 +2117,70 @@ function InventoryOwnerDashboard({ workOrders, inventory, users, onPrepareDispat
                     </div>
 
                     <div>
-                      {!ret.ReturnedAt ? (
-                        <button
-                          onClick={() => onAcknowledgeReceived(ret.ReturnId)}
-                          className="rounded-lg bg-indigo-600 hover:bg-indigo-700 font-bold text-white px-3.5 py-2 cursor-pointer"
-                        >
-                          Step 1: Confirm Store Handover arrival
-                        </button>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 text-emerald-800 rounded px-2.5 py-1 font-bold">
-                          Arrived & store-checked
-                        </span>
-                      )}
-                    </div>
-
-                    <div>
-                      {ret.ReturnedAt && !wo?.ActualReturnDate && (
+                      {ret.Status === "PendingAssignment" && (
                         <div className="space-y-2">
-                          <p className="text-[10px] text-slate-450 uppercase tracking-wider font-bold">Step 2: Sign-off Handover release:</p>
-                          <button
-                            onClick={() => onCompanyOTPConfirm(ret.ReturnId)}
-                            className="bg-slate-950 text-white font-bold py-2 px-4 rounded-xl hover:bg-slate-850 cursor-pointer w-full text-center"
-                          >
-                            Close Work Order (Issue completion logs)
-                          </button>
+                          <p className="text-[10px] text-slate-450 uppercase tracking-wider font-bold">Step 1: Assign Driver for Pickup</p>
+                          <div className="flex flex-col gap-2">
+                            <select
+                               className="bg-white border border-slate-205 rounded px-2 py-1.5 text-[11px]"
+                               value={selectedDriver[ret.ReturnId] || "user-9"}
+                               onChange={(e) => setSelectedDriver({ ...selectedDriver, [ret.ReturnId]: e.target.value })}
+                            >
+                               <option value="user-9">Venkatesh Porter (TN 38 AB 1111)</option>
+                            </select>
+                            <button
+                              onClick={async () => {
+                                const dId = selectedDriver[ret.ReturnId] || "user-9";
+                                const vNum = "TN 38 AB 1111"; // simplified
+                                await fetch("/api/return/assign-driver", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ WorkOrderId: ret.WorkOrderId, DriverId: dId, VehicleNumber: vNum })
+                                });
+                                fetchDispatches();
+                              }}
+                              className="rounded-lg bg-indigo-600 hover:bg-indigo-700 font-bold text-white px-3.5 py-2 cursor-pointer"
+                            >
+                              Assign Driver
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {(ret.Status === "Assigned" || ret.Status === "InTransit") && wo?.Status !== "7_Completed" && (
+                        <div className="space-y-2">
+                           <p className="text-[10px] text-slate-450 uppercase tracking-wider font-bold">Step 2: Verify Goods Receipt OTP</p>
+                           <div className="flex flex-col gap-2">
+                              <input 
+                                type="text"
+                                placeholder="Enter Driver's Receipt OTP"
+                                value={simulatedOTPInput[ret.ReturnId] || ""}
+                                onChange={(e) => setSimulatedOTPInput({...simulatedOTPInput, [ret.ReturnId]: e.target.value})}
+                                className="bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-center font-bold"
+                              />
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const res = await fetch("/api/return/" + ret.ReturnId + "/company-otp-confirm", {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ otp: simulatedOTPInput[ret.ReturnId] })
+                                    });
+                                    if (!res.ok) {
+                                       const err = await res.json();
+                                       alert(err.error);
+                                    } else {
+                                       fetchDispatches();
+                                    }
+                                  } catch (e) {
+                                     console.error(e);
+                                  }
+                                }}
+                                className="bg-slate-950 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-850 cursor-pointer"
+                              >
+                                Verify & Close Order
+                              </button>
+                           </div>
                         </div>
                       )}
                     </div>
@@ -2191,6 +2189,183 @@ function InventoryOwnerDashboard({ workOrders, inventory, users, onPrepareDispat
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Modal Overlay */}
+      {selectedModalOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setSelectedModalOrder(null)} />
+
+          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Truck className="h-5 w-5 text-indigo-500" />
+                Dispatch Control Room — <span className="font-mono">{selectedModalOrder.WorkOrderCode}</span>
+              </h3>
+              <button onClick={() => setSelectedModalOrder(null)} className="p-1 text-slate-400 hover:text-slate-800 bg-white rounded-lg border border-slate-200 shadow-xs cursor-pointer">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 flex flex-col md:flex-row gap-6">
+              {/* Left Panel: Driver Email / OTP Simulation */}
+              <div className="md:w-1/3 bg-slate-50 rounded-2xl border border-slate-150 p-4 flex flex-col gap-4">
+                <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <Mail className="h-3.5 w-3.5" /> Simulated Driver Email
+                </h4>
+
+                {(() => {
+                  const activeDisp = dispatches.find((d) => d.workOrder?.WorkOrderId === selectedModalOrder.WorkOrderId)?.dispatch;
+                  if (!activeDisp || !activeDisp.DispatchOTP) {
+                    return (
+                      <div className="flex-1 border border-dashed border-slate-300 rounded-xl flex items-center justify-center text-center p-4">
+                        <span className="text-[10px] text-slate-400 font-medium">
+                          Assign a driver first to automatically dispatch the OTP email.
+                        </span>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden text-[10px]">
+                      <div className="bg-slate-800 text-white p-2.5 font-mono text-[9px] uppercase tracking-widest font-semibold flex items-center justify-between">
+                        <span>Incoming Inbox</span>
+                        <span className="bg-emerald-500 h-1.5 w-1.5 rounded-full animate-pulse" />
+                      </div>
+                      <div className="p-3 space-y-2 border-b border-slate-50">
+                        <p className="text-slate-400">From: <span className="text-slate-700 font-semibold">dispatch@sakthithara.com</span></p>
+                        <p className="font-bold text-slate-800 flex items-center gap-1">
+                          <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+                          Your Pickup Pass & Verification PIN
+                        </p>
+                      </div>
+                      <div className="p-3 bg-slate-50 font-mono text-[9px] text-slate-600 leading-relaxed whitespace-pre-wrap">
+                        Dear Driver,{"\n\n"}Please arrive at Sakthithara Main Store to collect the packages for {selectedModalOrder.WorkOrderCode}.{"\n\n"}Present this PIN to the Store Manager upon loading to verify your identity:{"\n\n"}<span className="inline-block mt-1 text-base font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded border border-emerald-200">{activeDisp.DispatchOTP}</span>{"\n\n"}Safe travels,{"\n"}Sakthithara Logistics
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Right Panel: Actions */}
+              <div className="md:w-2/3 space-y-6 text-xs">
+                {(() => {
+                  const activeDisp = dispatches.find((d) => d.workOrder?.WorkOrderId === selectedModalOrder.WorkOrderId)?.dispatch;
+                  const driverSelected = selectedDriver[selectedModalOrder.WorkOrderId] || "user-9";
+
+                  return (
+                    <>
+                      {/* Step 1 */}
+                      <div className={`p-4 rounded-xl border ${!activeDisp ? "border-indigo-200 bg-indigo-50/50 shadow-sm" : "border-slate-150 bg-white opacity-60"}`}>
+                        <h4 className="font-bold text-slate-800 text-xs mb-2">Step 1: Verify Requirements & Prepare Packages</h4>
+                        <div className="grid grid-cols-2 gap-2 mb-3">
+                          {selectedModalOrder.MaterialDetails.map((mat: any) => {
+                            const stockItem = inventory.find(i => i.ItemId === mat.ItemId);
+                            const isLow = (stockItem?.AvailableQuantity || 0) < mat.Quantity;
+                            return (
+                              <div key={mat.ItemId} className="bg-slate-50 border border-slate-100 p-2 rounded text-[10px] font-mono">
+                                <span className="block text-slate-500 mb-0.5">{mat.ItemName}</span>
+                                <span className="font-bold text-slate-800">{mat.Quantity} {mat.Unit} req.</span>
+                                {isLow ? <span className="block text-rose-600 font-bold mt-0.5">⚠ Low Stock</span> : <span className="block text-emerald-600 font-bold mt-0.5">✔ In Stock</span>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {!activeDisp && (
+                          <button
+                            onClick={async () => {
+                              await onPrepareDispatch(selectedModalOrder.WorkOrderId);
+                              fetchDispatches(); // Trigger local refresh to show updated state
+                            }}
+                            className="rounded-lg bg-slate-900 hover:bg-slate-800 font-bold text-white py-1.5 px-4 text-[11px] cursor-pointer"
+                          >
+                            Confirm Packages Are Prepared
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Step 2 */}
+                      {activeDisp && !activeDisp.DispatchOTP && (
+                        <div className="p-4 rounded-xl border border-indigo-200 bg-indigo-50/50 shadow-sm space-y-3">
+                          <h4 className="font-bold text-slate-800 text-xs">Step 2: Assign Driver & Vehicle</h4>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-slate-500 uppercase">Driver Profile</label>
+                              <select
+                                value={driverSelected}
+                                onChange={(e) => {
+                                  const DRIVER_VEHICLES: Record<string, string> = {
+                                    "user-9": "TN 38 AB 1111"
+                                  };
+                                  setSelectedDriver({ ...selectedDriver, [selectedModalOrder.WorkOrderId]: e.target.value });
+                                  setVehicleNumber({ ...vehicleNumber, [selectedModalOrder.WorkOrderId]: DRIVER_VEHICLES[e.target.value] || "" });
+                                }}
+                                className="w-full bg-white border border-slate-205 rounded px-2.5 py-1.5 text-[11px] font-bold focus:ring-1 focus:ring-indigo-400 focus:outline-none"
+                              >
+                                <option value="user-9">Venkatesh Porter (TN 38 AB 1111)</option>
+                              </select>
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-slate-500 uppercase">Vehicle License Plate</label>
+                              <input
+                                type="text"
+                                readOnly
+                                value={vehicleNumber[selectedModalOrder.WorkOrderId] || "TN 38 AB 1111"}
+                                className="w-full bg-slate-100 border border-slate-205 rounded px-2.5 py-1.5 text-[11px] font-mono text-slate-500 cursor-not-allowed focus:outline-none"
+                              />
+                            </div>
+                          </div>
+                          <button
+                            onClick={async () => {
+                              const vNum = vehicleNumber[selectedModalOrder.WorkOrderId] || "TN 38 AB 1111";
+                              await onAssignDriver(activeDisp.DispatchId, driverSelected, vNum);
+                              fetchDispatches();
+                            }}
+                            className="rounded-lg bg-indigo-600 hover:bg-indigo-700 font-bold text-white py-1.5 px-4 text-[11px] cursor-pointer"
+                          >
+                            Assign Driver & Dispatch OTP
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Step 3 */}
+                      {activeDisp && activeDisp.DispatchOTP && (
+                        <div className="p-5 rounded-xl border border-emerald-200 bg-emerald-50/40 shadow-sm space-y-3">
+                          <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                            <CheckCheck className="h-4 w-4 text-emerald-500" />
+                            Step 3: Verification & Loading
+                          </h4>
+                          <p className="text-[10px] text-slate-500 leading-relaxed">
+                            Driver has been assigned and their pickup pass was emailed (simulated in the left panel). When they arrive, ask for their 6-digit PIN to verify identity before loading cargo.
+                          </p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <input
+                              type="text"
+                              placeholder="Enter 6-Digit Driver PIN"
+                              value={simulatedOTPInput[selectedModalOrder.WorkOrderId] || ""}
+                              onChange={(e) => setSimulatedOTPInput({ ...simulatedOTPInput, [selectedModalOrder.WorkOrderId]: e.target.value })}
+                              className="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-2 text-center text-sm font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            />
+                            <button
+                              onClick={async () => {
+                                await onVerifyOTP(activeDisp.DispatchId, simulatedOTPInput[selectedModalOrder.WorkOrderId] || "");
+                                setSelectedModalOrder(null);
+                                fetchDispatches();
+                              }}
+                              className="rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold px-5 py-2 text-xs transition-transform hover:scale-105 cursor-pointer shadow-md shadow-slate-900/20"
+                            >
+                              Verify & Dispatch
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -2209,12 +2384,23 @@ interface DriverProps {
 
 function DriverDashboard({ currentUser, onVerifyDeliveryOTP, onUpdateLocation }: DriverProps) {
   const [deliveries, setDeliveries] = useState<any[]>([]);
+  const [returnRuns, setReturnRuns] = useState<any[]>([]);
+  const [workOrders, setWorkOrders] = useState<any[]>([]);
   const [otpVal, setOTPVal] = useState<Record<string, string>>({});
 
   const listMyRuns = async () => {
     try {
-      const res = await fetch("/api/driver/my-deliveries");
+      const res = await fetch("/api/driver/my-deliveries?driverId=" + currentUser.id);
       if (res.ok) setDeliveries(await res.json());
+
+      const woRes = await fetch("/api/work-orders");
+      if (woRes.ok) setWorkOrders(await woRes.json());
+
+      const retRes = await fetch("/api/return/history");
+      if (retRes.ok) {
+        const allRet = await retRes.json();
+        setReturnRuns(allRet.filter((r: any) => r.DriverId === currentUser.id));
+      }
     } catch (e) {
       console.error(e);
     }
@@ -2224,24 +2410,11 @@ function DriverDashboard({ currentUser, onVerifyDeliveryOTP, onUpdateLocation }:
     listMyRuns();
   }, []);
 
-  // Simulator GPS updates
-  const handleGPSPush = async (woId: string, locationStage: number) => {
-    // Coordinate progression to SIPCOT Erode factory
-    const route = [
-      { lat: 11.1085, lng: 77.3411, desc: "Awaiting departure Tiruppur" },
-      { lat: 11.1550, lng: 77.4120, desc: "Driving past Avinashi highway bypass" },
-      { lat: 11.2010, lng: 77.5110, desc: "Passing Perundurai SIPCOT highway toll" },
-      { lat: 11.2330, lng: 77.5850, desc: "Arrival check Erode factory gate" }
-    ];
 
-    const pt = route[locationStage] || route[1];
-    await onUpdateLocation(woId, pt.lat, pt.lng, pt.desc);
-    listMyRuns();
-  };
 
   return (
     <div className="max-w-md mx-auto space-y-6 animate-fade-in text-xs">
-      
+
       <div className="bg-slate-900 rounded-3xl p-6 text-white text-center shadow-xl">
         <span className="rounded bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 text-[9px] font-bold tracking-wider text-indigo-400 font-mono">
           DRIVER MOBILE DESK
@@ -2263,15 +2436,14 @@ function DriverDashboard({ currentUser, onVerifyDeliveryOTP, onUpdateLocation }:
 
             return (
               <div key={d.DispatchId} className="bg-white rounded-2xl border border-slate-150 p-5 shadow-sm space-y-4">
-                
+
                 <div className="flex justify-between items-start border-b border-slate-50 pb-3">
                   <div>
                     <span className="font-extrabold text-slate-900 font-mono text-sm uppercase">{wo.WorkOrderCode}</span>
                     <p className="text-[10px] text-slate-400 mt-0.5">Route: Tiruppur Store → Erode SIPCOT</p>
                   </div>
-                  <span className={`text-[10px] font-bold uppercase rounded px-2.5 py-0.5 ${
-                    wo.Status === "7_Completed" || d.OTPVerifiedAt ? "bg-indigo-100 text-indigo-800" : "bg-slate-100 text-slate-650"
-                  }`}>
+                  <span className={`text-[10px] font-bold uppercase rounded px-2.5 py-0.5 ${wo.Status === "7_Completed" || d.OTPVerifiedAt ? "bg-indigo-100 text-indigo-800" : "bg-slate-100 text-slate-650"
+                    }`}>
                     {wo.Status}
                   </span>
                 </div>
@@ -2286,30 +2458,10 @@ function DriverDashboard({ currentUser, onVerifyDeliveryOTP, onUpdateLocation }:
                   ))}
                 </div>
 
-                {/* Simulate location updates button triggers */}
-                {wo.Status === "2_InTransit_ToSubcontractor" && (
-                  <div className="space-y-3.5 border-t border-slate-50 pt-3">
-                    <p className="font-bold text-slate-500 uppercase text-[9px] tracking-wider">Simulate GPS Satellite coordinate tracking:</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => handleGPSPush(wo.WorkOrderId, 1)}
-                        className="rounded-lg border border-slate-200 hover:bg-slate-50 p-1.5 font-bold cursor-pointer transition-colors"
-                      >
-                        📍 P1: Highway Bypass
-                      </button>
-                      <button
-                        onClick={() => handleGPSPush(wo.WorkOrderId, 2)}
-                        className="rounded-lg border border-slate-200 hover:bg-slate-50 p-1.5 font-bold cursor-pointer transition-colors"
-                      >
-                        📍 P2: Pass SIPCOT toll
-                      </button>
-                      <button
-                        onClick={() => handleGPSPush(wo.WorkOrderId, 3)}
-                        className="rounded-lg border border-slate-200 hover:bg-slate-50 p-1.5 col-span-2 font-bold cursor-pointer transition-colors text-emerald-700"
-                      >
-                        📍 P3: Arrived Subcontractor Gate
-                      </button>
-                    </div>
+                {wo.Status === "1_ToBeDispatched" && (
+                  <div className="bg-indigo-50 text-indigo-700 p-3 rounded-xl border border-indigo-100 mt-4">
+                    <p className="font-bold text-xs mb-1">Status: Pending Loading</p>
+                    <p>Provide your 6-digit Dispatch OTP (sent to your email/SMS) to the Store Manager to verify your identity and receive the cargo.</p>
                   </div>
                 )}
 
@@ -2322,7 +2474,7 @@ function DriverDashboard({ currentUser, onVerifyDeliveryOTP, onUpdateLocation }:
                         Subcontractor Handover Authentication Check:
                       </h4>
                       <p className="text-[10px] text-indigo-750 mt-1 mb-3">
-                        Ask Subcontractor for their Delivery OTP (received in subcontractor's simulated email logs on the drawer!).
+                        Upon arrival at subcontractor, request the Delivery OTP they received via email to complete the secure handover.
                       </p>
 
                       <div className="flex gap-2">
@@ -2350,154 +2502,85 @@ function DriverDashboard({ currentUser, onVerifyDeliveryOTP, onUpdateLocation }:
         )}
       </div>
 
-    </div>
-  );
-}
-
-// -------------------------------------------------------------
-// CHILD VIEWS: 7. SUBCONTRACTOR PORTAL VIEW
-// -------------------------------------------------------------
-interface SubcontractorProps {
-  workOrderId: string | null;
-  onAcknowledge: (id: string) => Promise<void>;
-  onComplete: (id: string) => Promise<void>;
-}
-
-function SubcontractorPortalView({ workOrderId, onAcknowledge, onComplete }: SubcontractorProps) {
-  const [wo, setWo] = useState<WorkOrder | null>(null);
-  const [sub, setSub] = useState<Subcontractor | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const fetchOrder = async () => {
-    if (!workOrderId) return;
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/work-orders/${workOrderId}`);
-      if (res.ok) {
-        const item = await res.json();
-        setWo(item);
-
-        const sRes = await fetch("/api/subcontractors");
-        if (sRes.ok) {
-          const subsList = await sRes.json();
-          const match = subsList.find((s: Subcontractor) => s.SubcontractorId === item.SubcontractorId);
-          setSub(match);
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchOrder();
-  }, [workOrderId]);
-
-  if (!workOrderId || !wo) {
-    return (
-      <div className="max-w-2xl mx-auto py-12 text-center bg-white border border-slate-150 rounded-3xl p-6 text-xs">
-        <Mail className="h-8 w-8 text-slate-400 mx-auto mb-2" />
-        <h3 className="font-bold text-slate-800">No subcontractor dispatch active now</h3>
-        <p className="text-slate-500 mt-1">Please raise and dispatch a work order to see details here.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="max-w-2xl mx-auto space-y-6 animate-fade-in text-xs">
-      
-      {/* Visual Header */}
-      <div className="bg-indigo-950 rounded-3xl p-6 sm:p-8 text-white text-center sm:text-left shadow-xl relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] opacity-20" />
-        <span className="rounded bg-indigo-505 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 text-[10px] font-mono tracking-wider font-bold text-indigo-400">
-          PARTNER PRODUCTION GATEWAY
-        </span>
-        <h2 className="text-xl sm:text-2xl font-bold mt-3 tracking-tight">{sub ? sub.CompanyName : "Subcontractor Workspace"} Portal</h2>
-        <p className="text-[11px] text-indigo-300 mt-1.5 leading-relaxed">
-          Authorized secure linkage. Manage cargo inventories, complete phases, upload completion receipts, and sign-off logistics.
-        </p>
-      </div>
-
-      <div className="bg-white rounded-3xl border border-slate-150 p-6 shadow-xs space-y-5">
-        <div className="flex justify-between items-center border-b border-slate-50 pb-3">
-          <div>
-            <span className="text-slate-400 font-mono tracking-widest text-[10px] uppercase font-bold">Secure Work Order Hash:</span>
-            <h3 className="text-base font-black text-slate-900 font-mono tracking-tight mt-0.5">{wo.WorkOrderCode}</h3>
+      <div className="space-y-4">
+        <h3 className="font-bold text-slate-800 uppercase tracking-widest text-xs">Return Pickups ({returnRuns.length})</h3>
+        {returnRuns.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-150 p-6 text-center text-slate-500">
+            No return pickups assigned.
           </div>
+        ) : (
+          returnRuns.map((ret) => {
+            const wo = workOrders.find(w => w.WorkOrderId === ret.WorkOrderId);
+            if (!wo) return null;
 
-          <span className={`text-[10px] font-bold uppercase rounded px-3 py-1 ${
-            wo.Status === "7_Completed" ? "bg-emerald-100 text-emerald-805" : "bg-indigo-50 text-indigo-800"
-          }`}>
-            {wo.Status.replace(/^\d_/, "").replace(/_/g, " ")}
-          </span>
-        </div>
+            return (
+              <div key={ret.ReturnId} className="bg-white rounded-2xl border border-slate-150 p-5 shadow-sm space-y-4">
+                <div className="flex justify-between items-start border-b border-slate-50 pb-3">
+                  <div>
+                    <span className="font-extrabold text-slate-900 font-mono text-sm uppercase">{wo.WorkOrderCode}</span>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Type: Return Pickup</p>
+                  </div>
+                  <span className={`text-[10px] font-bold uppercase rounded px-2.5 py-0.5 ${wo.Status === "7_Completed" || ret.PickupDate ? "bg-indigo-100 text-indigo-800" : "bg-emerald-100 text-emerald-800"
+                    }`}>
+                    {ret.Status}
+                  </span>
+                </div>
 
-        {/* Requirements summary */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
-            <span className="text-slate-450 uppercase text-[9px] tracking-wider font-bold block">Deliverable Quantities:</span>
-            <p className="text-base font-black text-slate-900 font-mono">{wo.TotalQuantity} {wo.Unit}</p>
-            <p className="text-[10px] text-slate-400 leading-tight">Required finish item conversion target</p>
-          </div>
+                {ret.Status === "Assigned" && (
+                  <div className="border-t border-slate-50 pt-4 space-y-3">
+                    <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-4">
+                      <h4 className="font-bold text-emerald-900 flex items-center gap-1">
+                        <ShieldCheck className="h-4.5 w-4.5 text-emerald-700" />
+                        Subcontractor Handover Pickup Check:
+                      </h4>
+                      <p className="text-[10px] text-emerald-800 mt-1 mb-3">
+                        Enter the Pickup OTP provided by the Subcontractor to authenticate the material handover.
+                      </p>
 
-          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
-            <span className="text-slate-450 uppercase text-[9px] tracking-wider font-bold block">Target Return Window:</span>
-            <p className="text-base font-black text-slate-900 font-mono">{wo.ExpectedReturnDate}</p>
-            <p className="text-[10px] text-slate-400 leading-tight">Expected return window check deadline</p>
-          </div>
-        </div>
-
-        {/* Check receipt details of cargos loaded */}
-        <div className="border border-slate-105 rounded-2xl p-4 bg-slate-5/20 space-y-3.5">
-          <h4 className="font-bold text-slate-805 border-b border-slate-50 pb-1 text-[11px] uppercase">Warehouse cargo packages list:</h4>
-          
-          <div className="space-y-2">
-            {wo.MaterialDetails.map((mat, idx) => (
-              <div key={idx} className="flex justify-between items-center text-xs font-mono font-medium text-slate-650">
-                <span>📦 {mat.ItemName}</span>
-                <span className="font-bold text-slate-900">{mat.Quantity} {mat.Unit}</span>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="6-Digit Pickup OTP"
+                          value={otpVal[ret.ReturnId] || ""}
+                          onChange={(e) => setOTPVal({ ...otpVal, [ret.ReturnId]: e.target.value })}
+                          className="bg-white border rounded px-3 py-2 text-center text-sm font-bold w-full focus:outline-none focus:ring-2 focus:ring-slate-900"
+                        />
+                        <button
+                          onClick={async () => {
+                             try {
+                               const res = await fetch("/api/return/" + ret.ReturnId + "/pickup-confirm", {
+                                 method: "POST",
+                                 headers: {"Content-Type": "application/json"},
+                                 body: JSON.stringify({ otp: otpVal[ret.ReturnId] })
+                               });
+                               if (!res.ok) {
+                                  const err = await res.json();
+                                  alert(err.error);
+                               } else {
+                                  listMyRuns();
+                               }
+                             } catch(e) {
+                               console.error(e);
+                             }
+                          }}
+                          className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 transition-all cursor-pointer"
+                        >
+                          Verify Pickup
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {ret.Status === "InTransit" && (
+                  <div className="bg-slate-50 text-slate-700 p-3 rounded-xl border border-slate-200 mt-4">
+                    <p className="font-bold text-xs mb-1">Status: In Transit to Company Store</p>
+                    <p>Drive safely. When you arrive, provide your Goods Receipt OTP: <span className="font-mono text-emerald-600 font-bold ml-1">{ret.GoodsReceiptOTP}</span></p>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Action Flows based on status */}
-        <div className="border-t border-slate-101 pt-5 flex justify-end gap-3 font-semibold">
-          {wo.Status === "3_ReceivedBySubcontractor" && (
-            <button
-              onClick={() => onAcknowledge(wo.WorkOrderId)}
-              className="rounded-xl bg-slate-950 font-bold hover:bg-slate-850 text-white px-5 py-2.5 cursor-pointer w-full text-center"
-            >
-              Step 1: Acknowledge Material Receipt & Start Processing
-            </button>
-          )}
-
-          {wo.Status === "4_InProcessAtSubcontractor" && (
-            <button
-              onClick={() => onComplete(wo.WorkOrderId)}
-              className="rounded-xl bg-indigo-650 text-white font-semibold py-2.5 px-5 hover:bg-indigo-700 cursor-pointer w-full text-center"
-            >
-              Step 2: Sign-off Processing Complete (Notify Operations)
-            </button>
-          )}
-
-          {wo.Status === "5_ReturnInTransit" && (
-            <span className="text-indigo-805 bg-indigo-50 border border-indigo-100 rounded px-4 py-2 font-bold w-full text-center">
-              Processing cleared. Secure return logistics active on highway route...
-            </span>
-          )}
-
-          {wo.Status === "7_Completed" && (
-            <div className="rounded-2xl border border-emerald-150 bg-emerald-50 text-emerald-805 p-4 text-center w-full">
-              <span className="font-bold text-sm block">✔ PRODUCTION COMPLETED & CLOSED</span>
-              <p className="text-[10px] text-emerald-600 mt-1 max-w-sm mx-auto">
-                Cargo balances integrated into company central warehouse inventory lists successfully.
-              </p>
-            </div>
-          )}
-        </div>
+            );
+          })
+        )}
       </div>
 
     </div>
@@ -2518,7 +2601,7 @@ interface TrackingPageProps {
 
 function TrackingPage({ workOrderId, workOrders, projects, processes, subcontractors, users }: TrackingPageProps) {
   const [selectedWoId, setSelectedWoId] = useState<string | null>(workOrderId);
-  
+
   const currentWo = workOrders.find((w) => w.WorkOrderId === (selectedWoId || workOrderId));
 
   if (!currentWo) {
@@ -2539,7 +2622,7 @@ function TrackingPage({ workOrderId, workOrders, projects, processes, subcontrac
 
   return (
     <div className="space-y-6 animate-fade-in text-xs">
-      
+
       {/* Option selectors for track selection */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-2xl border border-slate-150 p-4 shadow-xs">
         <div>
@@ -2566,7 +2649,7 @@ function TrackingPage({ workOrderId, workOrders, projects, processes, subcontrac
           SECURE SATELLITE ORBIT DESK
         </span>
         <h2 className="text-lg sm:text-xl font-bold mt-2 font-mono">{currentWo.WorkOrderCode} - LOG LOGISTICS</h2>
-        
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 relative z-10 text-[11px] text-slate-350 font-mono">
           <div>
             <span className="text-slate-450 block text-[9px] font-bold">PROJECT CODE:</span>

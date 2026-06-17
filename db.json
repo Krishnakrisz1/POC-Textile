@@ -1,0 +1,955 @@
+{
+  "users": [
+    {
+      "UserId": "user-1",
+      "Name": "Kalyan MD",
+      "Email": "krishnajayanth54@gmail.com",
+      "Phone": "+91 9443210123",
+      "RoleCode": "SUPER_ADMIN",
+      "RoleName": "SuperAdmin (MD)",
+      "IsActive": true,
+      "CreatedAt": "2026-01-10T12:00:00Z"
+    },
+    {
+      "UserId": "user-1-sa",
+      "Name": "Sakthithara Director",
+      "Email": "superadmin@sakthithara.com",
+      "Phone": "+91 9443210124",
+      "RoleCode": "SUPER_ADMIN",
+      "RoleName": "SuperAdmin (Director)",
+      "IsActive": true,
+      "CreatedAt": "2026-01-10T12:00:00Z"
+    },
+    {
+      "UserId": "user-2",
+      "Name": "Meena Admin",
+      "Email": "admin@company.com",
+      "Phone": "+91 9845678901",
+      "RoleCode": "ADMIN",
+      "RoleName": "Admin",
+      "IsActive": true,
+      "CreatedAt": "2026-01-11T09:00:00Z"
+    },
+    {
+      "UserId": "user-3",
+      "Name": "Ramesh ProjectHead",
+      "Email": "po1@company.com",
+      "Phone": "+91 9876543210",
+      "RoleCode": "PROJECT_OWNER",
+      "RoleName": "Project Owner",
+      "IsActive": true,
+      "CreatedAt": "2026-01-12T10:00:00Z"
+    },
+    {
+      "UserId": "user-4",
+      "Name": "Senthil Operations",
+      "Email": "po2@company.com",
+      "Phone": "+91 9876543211",
+      "RoleCode": "PROJECT_OWNER",
+      "RoleName": "Project Owner",
+      "IsActive": true,
+      "CreatedAt": "2026-01-12T11:00:00Z"
+    },
+    {
+      "UserId": "user-5",
+      "Name": "Arun Knitting-Owner",
+      "Email": "pro1@company.com",
+      "Phone": "+91 9944332211",
+      "RoleCode": "PROCESS_OWNER",
+      "RoleName": "Process Owner",
+      "IsActive": true,
+      "CreatedAt": "2026-01-15T08:30:00Z"
+    },
+    {
+      "UserId": "user-8",
+      "Name": "Sivakumar StoreManager",
+      "Email": "store@company.com",
+      "Phone": "+91 9944332214",
+      "RoleCode": "INVENTORY_OWNER",
+      "RoleName": "Inventory Owner",
+      "IsActive": true,
+      "CreatedAt": "2026-01-16T08:00:00Z"
+    },
+    {
+      "UserId": "user-9",
+      "Name": "Venkatesh Porter",
+      "Email": "driver1@company.com",
+      "Phone": "+91 9361112222",
+      "RoleCode": "PORTER_DRIVER",
+      "RoleName": "Porter Driver",
+      "IsActive": true,
+      "CreatedAt": "2026-01-18T10:00:00Z"
+    },
+    {
+      "UserId": "user-10",
+      "Name": "Muthu Logistics",
+      "Email": "driver2@company.com",
+      "Phone": "+91 9361113333",
+      "RoleCode": "PORTER_DRIVER",
+      "RoleName": "Porter Driver",
+      "IsActive": true,
+      "CreatedAt": "2026-01-18T11:00:00Z"
+    },
+    {
+      "UserId": "user-11",
+      "Name": "Gopal Driver",
+      "Email": "driver3@company.com",
+      "Phone": "+91 9361114444",
+      "RoleCode": "PORTER_DRIVER",
+      "RoleName": "Porter Driver",
+      "IsActive": true,
+      "CreatedAt": "2026-01-18T12:00:00Z"
+    },
+    {
+      "UserId": "user-12",
+      "Name": "Subba Rao (Knitting Co.)",
+      "Email": "knitting@sub.com",
+      "Phone": "+91 9952220101",
+      "RoleCode": "SUBCONTRACTOR",
+      "RoleName": "Subcontractor",
+      "IsActive": true,
+      "CreatedAt": "2026-01-20T10:00:00Z"
+    },
+    {
+      "UserId": "user-13",
+      "Name": "Kalaiselvan (Kalai Dyeing)",
+      "Email": "dyeing@sub.com",
+      "Phone": "+91 9952220102",
+      "RoleCode": "SUBCONTRACTOR",
+      "RoleName": "Subcontractor",
+      "IsActive": true,
+      "CreatedAt": "2026-01-20T10:30:00Z"
+    },
+    {
+      "UserId": "user-14",
+      "Name": "Ananth (Sri Stitching Hub)",
+      "Email": "stitching@sub.com",
+      "Phone": "+91 9952220103",
+      "RoleCode": "SUBCONTRACTOR",
+      "RoleName": "Subcontractor",
+      "IsActive": true,
+      "CreatedAt": "2026-01-20T11:00:00Z"
+    },
+    {
+      "UserId": "user-15",
+      "Name": "Sridhar (Print Masters)",
+      "Email": "printing@sub.com",
+      "Phone": "+91 9952220104",
+      "RoleCode": "SUBCONTRACTOR",
+      "RoleName": "Subcontractor",
+      "IsActive": true,
+      "CreatedAt": "2026-01-20T11:30:00Z"
+    }
+  ],
+  "subcontractors": [
+    {
+      "SubcontractorId": "sub-1",
+      "CompanyName": "Knitting Company Pvt Ltd",
+      "ContactPerson": "Subba Rao",
+      "Email": "knitting@sub.com",
+      "Phone": "+91 9952220101",
+      "Address": "12, Textile Avenue, Tiruppur, TN - 641603",
+      "ProcessTypes": [
+        "Knitting"
+      ],
+      "Rating": 4.8,
+      "IsActive": true
+    },
+    {
+      "SubcontractorId": "sub-2",
+      "CompanyName": "Kalai Dyeing Works",
+      "ContactPerson": "Kalaiselvan",
+      "Email": "dyeing@sub.com",
+      "Phone": "+91 9952220102",
+      "Address": "45, Industrial Estate, SIPCOT, Erode, TN - 638002",
+      "ProcessTypes": [
+        "Dyeing"
+      ],
+      "Rating": 4.5,
+      "IsActive": true
+    },
+    {
+      "SubcontractorId": "sub-3",
+      "CompanyName": "Sri Stitching Hub",
+      "ContactPerson": "Ananth",
+      "Email": "stitching@sub.com",
+      "Phone": "+91 9952220103",
+      "Address": "11A, Weaver colony, Salem, TN - 636005",
+      "ProcessTypes": [
+        "Stitching",
+        "Ironing",
+        "Packing"
+      ],
+      "Rating": 4.2,
+      "IsActive": true
+    },
+    {
+      "SubcontractorId": "sub-4",
+      "CompanyName": "Print Masters & Co.",
+      "ContactPerson": "Sridhar",
+      "Email": "printing@sub.com",
+      "Phone": "+91 9952220104",
+      "Address": "7, Dyeing Factory Street, Tiruppur, TN - 641652",
+      "ProcessTypes": [
+        "Printing",
+        "Embroidery"
+      ],
+      "Rating": 4.7,
+      "IsActive": true
+    }
+  ],
+  "inventory": [
+    {
+      "ItemId": "inv-1",
+      "ItemName": "Grey Yarn 40s combed",
+      "ItemCode": "YRN-40C",
+      "Category": "Yarn",
+      "AvailableQuantity": 8700,
+      "Unit": "kg",
+      "WarehouseLocation": "Aisle A1, Shelf 3",
+      "LastUpdatedAt": "2026-06-17T12:24:35.729Z"
+    },
+    {
+      "ItemId": "inv-2",
+      "ItemName": "Grey Fabric Interlock",
+      "ItemCode": "FAB-INT",
+      "Category": "Fabric",
+      "AvailableQuantity": 4900,
+      "Unit": "meters",
+      "WarehouseLocation": "Aisle B4, Floor Sector",
+      "LastUpdatedAt": "2026-06-15T10:00:00Z"
+    },
+    {
+      "ItemId": "inv-3",
+      "ItemName": "Dyed Jersey Fabric Royal Blue",
+      "ItemCode": "FAB-ROY",
+      "Category": "DyedMaterial",
+      "AvailableQuantity": 2800,
+      "Unit": "meters",
+      "WarehouseLocation": "Aisle C1, Climate Shelf",
+      "LastUpdatedAt": "2026-06-15T11:00:00Z"
+    },
+    {
+      "ItemId": "inv-4",
+      "ItemName": "Cut Chest Panels Cotton",
+      "ItemCode": "CUT-PNL",
+      "Category": "CutPanels",
+      "AvailableQuantity": 2000,
+      "Unit": "pcs",
+      "WarehouseLocation": "Aisle D2, Pallet",
+      "LastUpdatedAt": "2026-06-15T12:00:00Z"
+    }
+  ],
+  "transactions": [
+    {
+      "TxnId": "txn-1",
+      "ItemId": "inv-1",
+      "TransactionType": "Add",
+      "Quantity": 10000,
+      "TransactedBy": "user-8",
+      "TransactedAt": "2026-01-20T10:00:00Z",
+      "Remarks": "Initial seed inventory add"
+    },
+    {
+      "TxnId": "txn-2",
+      "ItemId": "inv-2",
+      "TransactionType": "Add",
+      "Quantity": 5000,
+      "TransactedBy": "user-8",
+      "TransactedAt": "2026-01-20T10:00:00Z",
+      "Remarks": "Initial seed inventory add"
+    },
+    {
+      "TxnId": "txn-3",
+      "ItemId": "inv-1",
+      "WorkOrderId": "wo-1",
+      "TransactionType": "Issue",
+      "Quantity": 800,
+      "TransactedBy": "user-8",
+      "TransactedAt": "2026-06-02T10:15:00Z",
+      "Remarks": "Dispatched to Knitting Co for Polo Order"
+    },
+    {
+      "TxnId": "txn-4",
+      "ItemId": "inv-2",
+      "WorkOrderId": "wo-2",
+      "TransactionType": "Issue",
+      "Quantity": 600,
+      "TransactedBy": "user-8",
+      "TransactedAt": "2026-06-14T11:45:00Z",
+      "Remarks": "Dispatched to Kalai Dyeing"
+    },
+    {
+      "TxnId": "txn-by2u5g9vd",
+      "ItemId": "inv-1",
+      "WorkOrderId": "wo-b9262ud27",
+      "TransactionType": "Issue",
+      "Quantity": 500,
+      "TransactedBy": "user-8",
+      "TransactedAt": "2026-06-17T12:24:35.729Z",
+      "Remarks": "Automatic deduction on driver pickup verification for Order: WO-1736"
+    },
+    {
+      "TxnId": "txn-xetdkc63k",
+      "ItemId": "inv-2",
+      "WorkOrderId": "wo-b9262ud27",
+      "TransactionType": "Return",
+      "Quantity": 500,
+      "TransactedBy": "user-8",
+      "TransactedAt": "2026-06-17T16:13:17.299Z",
+      "Remarks": "Received knitted grey fabric into inventory from Knit Co. Order Complete."
+    }
+  ],
+  "projects": [
+    {
+      "ProjectId": "proj-vpsbm6jih",
+      "ProjectName": "Knitwear India",
+      "ProjectCode": "PROJ-3171",
+      "CustomerId": "cust-qggqpxu7i",
+      "CustomerName": "Nike",
+      "OrderInstruction": "",
+      "AdminId": "user-2",
+      "ProjectOwnerId": "user-3",
+      "Timeline": [
+        {
+          "milestone": "Knitting Completion",
+          "dueDate": "2026-06-30"
+        },
+        {
+          "milestone": "Dyeing Batch",
+          "dueDate": "2026-07-10"
+        }
+      ],
+      "Status": "PendingApproval",
+      "CreatedAt": "2026-06-17T16:15:42.085Z"
+    },
+    {
+      "ProjectId": "proj-1",
+      "ProjectName": "Summer Polo Shirts 2026",
+      "ProjectCode": "PROJ-POLO-2026",
+      "CustomerId": "cust-nike",
+      "CustomerName": "ActiveWear India Group",
+      "OrderInstruction": "Pique polo shirts with double ventilation and custom collar prints. Material must be soft cotton-poly blend.",
+      "AdminId": "user-2",
+      "ProjectOwnerId": "user-3",
+      "Timeline": [
+        {
+          "milestone": "Knitting Completion",
+          "dueDate": "2026-06-10"
+        },
+        {
+          "milestone": "Dyeing & Bleaching",
+          "dueDate": "2026-06-25"
+        },
+        {
+          "milestone": "Stitching & Finish",
+          "dueDate": "2026-07-15"
+        }
+      ],
+      "Status": "InProgress",
+      "CreatedAt": "2026-05-25T10:00:00Z"
+    },
+    {
+      "ProjectId": "proj-2",
+      "ProjectName": "Organic Cotton Bed Sheets",
+      "ProjectCode": "PROJ-BED-LINEN",
+      "CustomerId": "cust-fab",
+      "CustomerName": "FabHome Decor Ltd",
+      "OrderInstruction": "300 thread count organic combed yarn weaving. Eco-friendly reactive bleaching only. Zero chemical emissions active.",
+      "AdminId": "user-2",
+      "ProjectOwnerId": "user-3",
+      "Timeline": [
+        {
+          "milestone": "Yarn Preparation",
+          "dueDate": "2026-06-20"
+        },
+        {
+          "milestone": "Knitting Weave",
+          "dueDate": "2026-07-05"
+        },
+        {
+          "milestone": "Sizing & Softening",
+          "dueDate": "2026-07-15"
+        }
+      ],
+      "Status": "InProgress",
+      "CreatedAt": "2026-06-15T15:00:00Z",
+      "ApprovedAt": "2026-06-17T12:10:22.589Z",
+      "ApprovedBy": "user-1"
+    },
+    {
+      "ProjectId": "proj-3",
+      "ProjectName": "Winter Knit Hoodies",
+      "ProjectCode": "PROJ-HOODIES-WNTR",
+      "CustomerId": "cust-dec",
+      "CustomerName": "Decade Originals Co",
+      "OrderInstruction": "Fleece cotton heavy density knit hoodies. Quality check required on sewing seams and color bleeding tests.",
+      "AdminId": "user-2",
+      "ProjectOwnerId": "user-3",
+      "Timeline": [
+        {
+          "milestone": "Knit & Weave",
+          "dueDate": "2026-04-10"
+        },
+        {
+          "milestone": "Dyeing Deep Navy",
+          "dueDate": "2026-04-20"
+        },
+        {
+          "milestone": "Sewing & Zipper Fits",
+          "dueDate": "2026-05-10"
+        }
+      ],
+      "Status": "Completed",
+      "CreatedAt": "2026-03-20T09:00:00Z"
+    }
+  ],
+  "processes": [
+    {
+      "ProcessId": "proc-1",
+      "ProjectId": "proj-1",
+      "ProcessName": "Yarn Weaving and Knitting",
+      "ProcessType": "Knitting",
+      "ProcessInstruction": "Circular knit interlock structure. Thickness 220 GSM.",
+      "ProcessOwnerId": "user-5",
+      "Priority": "High",
+      "ExpectedDeliveryDays": 10,
+      "Status": "Completed",
+      "QCRequired": true
+    },
+    {
+      "ProcessId": "proc-2",
+      "ProjectId": "proj-1",
+      "ProcessName": "Royal Blue Dyeing and Compacting",
+      "ProcessType": "Dyeing",
+      "ProcessInstruction": "Dyeing deep royal blue with color-fastness rating > 4.5. Stenter drying only.",
+      "ProcessOwnerId": "user-5",
+      "Priority": "High",
+      "ExpectedDeliveryDays": 12,
+      "Status": "InProgress",
+      "QCRequired": true
+    },
+    {
+      "ProcessId": "proc-3",
+      "ProjectId": "proj-1",
+      "ProcessName": "Double-Stitch Collar Joinery",
+      "ProcessType": "Stitching",
+      "ProcessInstruction": "Reinforced collar backing stitches, rib neck size 38' to 44'.",
+      "ProcessOwnerId": "user-5",
+      "Priority": "Medium",
+      "ExpectedDeliveryDays": 15,
+      "Status": "Pending",
+      "QCRequired": true
+    },
+    {
+      "ProcessId": "proc-4",
+      "ProjectId": "proj-2",
+      "ProcessName": "Bed Linens Weaving Setup",
+      "ProcessType": "Knitting",
+      "ProcessInstruction": "Broad weaving machines 120 inch roll-widths.",
+      "ProcessOwnerId": "user-5",
+      "Priority": "Medium",
+      "ExpectedDeliveryDays": 15,
+      "Status": "InProgress",
+      "QCRequired": false
+    },
+    {
+      "ProcessId": "proc-e7cqbrk4g",
+      "ProjectId": "proj-vpsbm6jih",
+      "ProcessName": "Royal blue dyeing",
+      "ProcessType": "Dyeing",
+      "ProcessInstruction": "",
+      "ProcessOwnerId": "user-5",
+      "Priority": "High",
+      "ExpectedDeliveryDays": 9,
+      "Status": "Assigned",
+      "QCRequired": false
+    }
+  ],
+  "workOrders": [
+    {
+      "WorkOrderId": "wo-b9262ud27",
+      "WorkOrderCode": "WO-1736",
+      "ProcessId": "proc-4",
+      "SubcontractorId": "sub-1",
+      "MaterialDetails": [
+        {
+          "ItemId": "inv-1",
+          "ItemName": "Grey Yarn 40s combed",
+          "Quantity": 500,
+          "Unit": "kg"
+        }
+      ],
+      "TotalQuantity": 500,
+      "Unit": "kg",
+      "Status": "7_Completed",
+      "ExpectedReturnDate": "2026-06-27",
+      "CreatedBy": "user-5",
+      "CreatedAt": "2026-06-17T12:17:23.849Z",
+      "DispatchDate": "2026-06-17T12:24:35.727Z",
+      "ActualReturnDate": "2026-06-17T16:13:17.295Z"
+    },
+    {
+      "WorkOrderId": "wo-1",
+      "WorkOrderCode": "WO-POLO-001",
+      "ProcessId": "proc-1",
+      "SubcontractorId": "sub-1",
+      "MaterialDetails": [
+        {
+          "ItemId": "inv-1",
+          "ItemName": "Grey Yarn 40s combed",
+          "Quantity": 800,
+          "Unit": "kg"
+        }
+      ],
+      "TotalQuantity": 800,
+      "Unit": "kg",
+      "Status": "7_Completed",
+      "DispatchDate": "2026-06-01T09:00:00Z",
+      "ExpectedReturnDate": "2026-06-11",
+      "ActualReturnDate": "2026-06-10T14:30:00Z",
+      "CreatedBy": "user-5",
+      "CreatedAt": "2026-05-30T10:00:00Z"
+    },
+    {
+      "WorkOrderId": "wo-2",
+      "WorkOrderCode": "WO-POLO-002",
+      "ProcessId": "proc-2",
+      "SubcontractorId": "sub-2",
+      "MaterialDetails": [
+        {
+          "ItemId": "inv-2",
+          "ItemName": "Grey Fabric Interlock",
+          "Quantity": 600,
+          "Unit": "meters"
+        }
+      ],
+      "TotalQuantity": 600,
+      "Unit": "meters",
+      "Status": "2_InTransit_ToSubcontractor",
+      "DispatchDate": "2026-06-14T11:45:00Z",
+      "ExpectedReturnDate": "2026-06-26",
+      "CreatedBy": "user-5",
+      "CreatedAt": "2026-06-12T09:30:00Z"
+    },
+    {
+      "WorkOrderId": "wo-3",
+      "WorkOrderCode": "WO-POLO-003",
+      "ProcessId": "proc-3",
+      "SubcontractorId": "sub-1",
+      "MaterialDetails": [
+        {
+          "ItemId": "inv-1",
+          "ItemName": "Grey Yarn 40s combed",
+          "Quantity": 300,
+          "Unit": "kg"
+        },
+        {
+          "ItemId": "inv-4",
+          "ItemName": "Cut Chest Panels Cotton",
+          "Quantity": 200,
+          "Unit": "pcs"
+        }
+      ],
+      "TotalQuantity": 500,
+      "Unit": "mixed",
+      "Status": "1_ToBeDispatched",
+      "ExpectedReturnDate": "2026-06-25",
+      "CreatedBy": "user-5",
+      "CreatedAt": "2026-06-17T09:00:00Z"
+    }
+  ],
+  "dispatches": [
+    {
+      "DispatchId": "disp-1",
+      "WorkOrderId": "wo-1",
+      "InventoryOwnerId": "user-8",
+      "DriverId": "user-9",
+      "DispatchOTP": "882103",
+      "OTPExpiry": "2026-06-01T11:00:00Z",
+      "OTPVerifiedAt": "2026-06-01T09:12:00Z",
+      "DeliveryChallanPath": "challan_WO-POLO-001.pdf",
+      "QuantityDispatched": 800,
+      "DispatchedAt": "2026-06-01T09:12:00Z",
+      "LoadingAcknowledgedAt": "2026-06-01T09:12:00Z",
+      "LoadingAcknowledgedBy": "user-8"
+    },
+    {
+      "DispatchId": "disp-2",
+      "WorkOrderId": "wo-2",
+      "InventoryOwnerId": "user-8",
+      "DriverId": "user-10",
+      "DispatchOTP": "421098",
+      "OTPExpiry": "2026-06-14T14:00:00Z",
+      "OTPVerifiedAt": "2026-06-14T11:45:00Z",
+      "DeliveryChallanPath": "challan_WO-POLO-002.pdf",
+      "QuantityDispatched": 600,
+      "DispatchedAt": "2026-06-14T11:45:00Z",
+      "LoadingAcknowledgedAt": "2026-06-14T11:40:00Z",
+      "LoadingAcknowledgedBy": "user-8"
+    },
+    {
+      "DispatchId": "disp-3",
+      "WorkOrderId": "wo-3",
+      "InventoryOwnerId": "user-8",
+      "DriverId": "user-11",
+      "DispatchOTP": "987654",
+      "OTPExpiry": "2026-06-18T14:00:00Z",
+      "OTPVerifiedAt": "",
+      "DeliveryChallanPath": "challan_WO-POLO-003.pdf",
+      "QuantityDispatched": 0
+    },
+    {
+      "DispatchId": "disp-5ecdqfxnc",
+      "WorkOrderId": "wo-b9262ud27",
+      "InventoryOwnerId": "user-8",
+      "DriverId": "user-9",
+      "DispatchOTP": "763071",
+      "OTPExpiry": "2026-06-17T14:22:11.558Z",
+      "DeliveryChallanPath": "challan_WO-gpc5fb6p2.pdf",
+      "QuantityDispatched": 0,
+      "VehicleNumber": "TN 38 AB 1111",
+      "OTPVerifiedAt": "2026-06-17T12:24:35.726Z",
+      "DispatchedAt": "2026-06-17T12:24:35.726Z"
+    }
+  ],
+  "deliveries": [
+    {
+      "DeliveryId": "del-1",
+      "DispatchId": "disp-1",
+      "WorkOrderId": "wo-1",
+      "DriverId": "user-9",
+      "SubcontractorOTP": "123456",
+      "SubOTPExpiry": "2026-06-01T15:00:00Z",
+      "SubOTPVerifiedAt": "2026-06-01T13:40:00Z",
+      "DeliveredAt": "2026-06-01T13:40:00Z",
+      "ReceivedByName": "Subba Rao"
+    },
+    {
+      "DeliveryId": "del-2",
+      "DispatchId": "disp-2",
+      "WorkOrderId": "wo-2",
+      "DriverId": "user-10",
+      "SubcontractorOTP": "753951",
+      "SubOTPExpiry": "2026-06-14T18:00:00Z"
+    },
+    {
+      "DeliveryId": "del-l8vs4bojp",
+      "DispatchId": "disp-5ecdqfxnc",
+      "WorkOrderId": "wo-b9262ud27",
+      "DriverId": "user-9",
+      "SubcontractorOTP": "866090",
+      "SubOTPExpiry": "2026-06-17T16:24:35.732Z",
+      "SubOTPVerifiedAt": "2026-06-17T12:28:10.399Z",
+      "DeliveredAt": "2026-06-17T12:28:10.399Z",
+      "ReceivedByName": "Subcontractor Representative"
+    }
+  ],
+  "returnPickups": [
+    {
+      "ReturnId": "ret-1",
+      "WorkOrderId": "wo-1",
+      "DriverId": "user-9",
+      "PickupDate": "2026-06-10T10:00:00Z",
+      "ReturnedAt": "2026-06-10T14:30:00Z",
+      "CompanyAcknowledgedAt": "2026-06-10T14:50:00Z",
+      "CompanyAcknowledgedBy": "user-8",
+      "ReturnQuantity": 800,
+      "ReturnChallanPath": "return_challan_WO-POLO-001.pdf"
+    },
+    {
+      "ReturnId": "ret-e70zg06cj",
+      "WorkOrderId": "wo-b9262ud27",
+      "DriverId": "user-9",
+      "VehicleNumber": "TN 38 AB 1111",
+      "PickupDate": "2026-06-17T16:12:51.394Z",
+      "ReturnQuantity": 500,
+      "Status": "Received",
+      "PickupOTP": "619252",
+      "GoodsReceiptOTP": "358221",
+      "ReturnedAt": "2026-06-17T16:13:17.293Z"
+    }
+  ],
+  "otpLogs": [
+    {
+      "OTPId": "otp-jov3f5wo8",
+      "WorkOrderId": "wo-b9262ud27",
+      "Type": "Dispatch",
+      "OTPCode": "763071",
+      "SentTo": "+91 9361112120",
+      "SentAt": "2026-06-17T12:22:11.560Z",
+      "IsExpired": false
+    },
+    {
+      "OTPId": "otp-1",
+      "WorkOrderId": "wo-1",
+      "Type": "Dispatch",
+      "OTPCode": "882103",
+      "SentTo": "+91 9361112222",
+      "SentAt": "2026-06-01T09:00:00Z",
+      "VerifiedAt": "2026-06-01T09:12:00Z",
+      "IsExpired": false
+    },
+    {
+      "OTPId": "otp-2",
+      "WorkOrderId": "wo-1",
+      "Type": "Delivery",
+      "OTPCode": "123456",
+      "SentTo": "knitting@sub.com",
+      "SentAt": "2026-06-01T09:15:00Z",
+      "VerifiedAt": "2026-06-01T13:40:00Z",
+      "IsExpired": false
+    },
+    {
+      "OTPId": "otp-3",
+      "WorkOrderId": "wo-2",
+      "Type": "Dispatch",
+      "OTPCode": "421098",
+      "SentTo": "+91 9361113333",
+      "SentAt": "2026-06-14T11:00:00Z",
+      "VerifiedAt": "2026-06-14T11:45:00Z",
+      "IsExpired": false
+    },
+    {
+      "OTPId": "otp-4",
+      "WorkOrderId": "wo-2",
+      "Type": "Delivery",
+      "OTPCode": "753951",
+      "SentTo": "dyeing@sub.com",
+      "SentAt": "2026-06-14T11:50:00Z",
+      "IsExpired": false
+    }
+  ],
+  "emailLogs": [
+    {
+      "EmailId": "em-pux0sr51y",
+      "WorkOrderId": "wo-b9262ud27",
+      "RecipientEmail": "knitting@sub.com",
+      "Subject": "Return Material Pickup Requested - WO-1736",
+      "Body": "A pickup request has been created to collect materials.\nPlease provide this Pickup OTP to the driver when they arrive: 619252",
+      "SentAt": "2026-06-17T15:57:04.581Z",
+      "DeliveryStatus": "Sent"
+    },
+    {
+      "EmailId": "em-mk2pf3z31",
+      "WorkOrderId": "wo-b9262ud27",
+      "RecipientEmail": "knitting@sub.com",
+      "Subject": "Work Order #WO-1736 — Materials Dispatched | Sakthithara Textile",
+      "Body": "Dear Knitting Company Pvt Ltd,\n\nMaterials for kg process have successfully left our main center.\n\nMaterial Details:\n- Grey Yarn 40s combed: 500 kg\n\nVehicle driver details:\n- Delivery Driver: Venkatesh Logistics\n- Verification Signature Key: 866090\n\nPlease present this 6-Digit OTP code to the driver upon vehicle arrival to complete handover confirmation.\n\nAccess Your Live Subcontractor Orders Portal via secure link:\nhttp://localhost:3000/subcontractor/portal/wo-b9262ud27",
+      "SentAt": "2026-06-17T12:24:35.734Z",
+      "DeliveryStatus": "Sent"
+    },
+    {
+      "EmailId": "em-1",
+      "WorkOrderId": "wo-1",
+      "RecipientEmail": "knitting@sub.com",
+      "Subject": "Work Order #WO-POLO-001 — Materials Dispatched | Sakthithara Textile",
+      "Body": "Materials for knitting dispatched. Driver: Venkatesh, Delivery OTP: 123456.",
+      "SentAt": "2026-06-01T09:15:00Z",
+      "DeliveryStatus": "Sent"
+    },
+    {
+      "EmailId": "em-2",
+      "WorkOrderId": "wo-2",
+      "RecipientEmail": "dyeing@sub.com",
+      "Subject": "Work Order #WO-POLO-002 — Materials Dispatched | Sakthithara Textile",
+      "Body": "Materials for dyeing dispatched. Driver: Muthu, Delivery OTP: 753951.",
+      "SentAt": "2026-06-14T11:50:00Z",
+      "DeliveryStatus": "Sent"
+    },
+    {
+      "EmailId": "em-3",
+      "WorkOrderId": "wo-3",
+      "RecipientEmail": "knitting@sub.com",
+      "Subject": "Work Order #WO-POLO-003 - Materials Dispatched | Sakthithara Textile",
+      "Body": "Materials for knitting dispatched. Driver: Gopal Driver, Delivery OTP: 987654.",
+      "SentAt": "2026-06-15T10:00:00Z",
+      "DeliveryStatus": "Sent"
+    }
+  ],
+  "trackingEvents": [
+    {
+      "EventId": "tr-1",
+      "WorkOrderId": "wo-2",
+      "DriverId": "user-10",
+      "Latitude": 11.1085,
+      "Longitude": 77.3411,
+      "EventType": "PickedUp",
+      "Timestamp": "2026-06-14T11:45:00Z",
+      "Remarks": "Materials loaded, departing Tiruppur"
+    },
+    {
+      "EventId": "tr-2",
+      "WorkOrderId": "wo-2",
+      "DriverId": "user-10",
+      "Latitude": 11.161,
+      "Longitude": 77.452,
+      "EventType": "InTransit",
+      "Timestamp": "2026-06-14T12:00:00Z",
+      "Remarks": "Passing Avinashi highway, in transit"
+    },
+    {
+      "EventId": "tr-3",
+      "WorkOrderId": "wo-2",
+      "DriverId": "user-10",
+      "Latitude": 11.233,
+      "Longitude": 77.585,
+      "EventType": "InTransit",
+      "Timestamp": "2026-06-14T12:30:00Z",
+      "Remarks": "Passing Perundurai SIPCOT highway toll"
+    },
+    {
+      "EventId": "tr-35hp6y18t",
+      "WorkOrderId": "wo-b9262ud27",
+      "DriverId": "user-9",
+      "Latitude": 11.1085,
+      "Longitude": 77.3411,
+      "EventType": "PickedUp",
+      "Timestamp": "2026-06-17T12:24:35.731Z",
+      "Remarks": "Materials verified. Vehicle loaded and departed center."
+    },
+    {
+      "EventId": "tr-j7k7x953p",
+      "WorkOrderId": "wo-b9262ud27",
+      "DriverId": "user-9",
+      "Latitude": 11.233,
+      "Longitude": 77.585,
+      "EventType": "Delivered",
+      "Timestamp": "2026-06-17T12:28:10.402Z",
+      "Remarks": "Materials received & verified via OTP. Driver successfully exited center."
+    }
+  ],
+  "pullbacks": [],
+  "notifications": [
+    {
+      "NotifId": "not-b41b9w1ob",
+      "UserId": "user-5",
+      "Title": "💼 Process Assigned to You",
+      "Message": "You have been assigned as Process Owner for \"Royal blue dyeing\" in project.",
+      "Type": "PROCESS",
+      "IsRead": false,
+      "CreatedAt": "2026-06-17T16:15:42.150Z",
+      "LinkRef": "/process-owner/processes/proc-e7cqbrk4g"
+    },
+    {
+      "NotifId": "not-jr02pahv8",
+      "UserId": "user-1",
+      "Title": "🆕 Project Pending Approval",
+      "Message": "New project \"Knitwear India\" has been submitted by Admin and awaits your review.",
+      "Type": "PROJECT",
+      "IsRead": false,
+      "CreatedAt": "2026-06-17T16:15:42.088Z",
+      "LinkRef": "/superadmin/dashboard"
+    },
+    {
+      "NotifId": "not-5k37tc62e",
+      "UserId": "user-1",
+      "Title": "🎉 Process Phase Completed",
+      "Message": "Polo Shirts Order Work Order WO-1736 is closed and ready for invoice clearance.",
+      "Type": "STAKEHOLDER",
+      "IsRead": false,
+      "CreatedAt": "2026-06-17T16:13:17.301Z",
+      "LinkRef": "/superadmin/work-orders"
+    },
+    {
+      "NotifId": "not-hco883xsm",
+      "UserId": "user-9",
+      "Title": "🚚 Return Pickup Assigned",
+      "Message": "Pickup OTP will be provided by subcontractor. Your Goods Receipt OTP (give to Store Owner on arrival) is 358221.",
+      "Type": "DELIVERY",
+      "IsRead": false,
+      "CreatedAt": "2026-06-17T16:11:17.333Z",
+      "LinkRef": "/driver/my-deliveries"
+    },
+    {
+      "NotifId": "not-ooesigdin",
+      "UserId": "system",
+      "Title": "📧 Email Sent to Subcontractor",
+      "Message": "Subject: \"Return Material Pickup Requested - WO-1736\". Contains login links and OTP verification keys. Check system mail logs.",
+      "Type": "EMAIL",
+      "IsRead": false,
+      "CreatedAt": "2026-06-17T15:57:04.584Z",
+      "LinkRef": "/subcontractor/portal/wo-b9262ud27"
+    },
+    {
+      "NotifId": "not-0665xy7cm",
+      "UserId": "user-5",
+      "Title": "📦 Work Order Received by Subcontractor",
+      "Message": "Work Order WO-1736 has been delivered and verified by Subcontractor. Processing started.",
+      "Type": "PROCESS",
+      "IsRead": false,
+      "CreatedAt": "2026-06-17T12:28:10.404Z",
+      "LinkRef": "/process-owner/work-orders/wo-b9262ud27"
+    },
+    {
+      "NotifId": "not-2yd6azf94",
+      "UserId": "system",
+      "Title": "📧 Email Sent to Subcontractor",
+      "Message": "Subject: \"Work Order #WO-1736 — Materials Dispatched | Sakthithara Textile\". Contains login links and OTP verification keys. Check system mail logs.",
+      "Type": "EMAIL",
+      "IsRead": false,
+      "CreatedAt": "2026-06-17T12:24:35.735Z",
+      "LinkRef": "/subcontractor/portal/wo-b9262ud27"
+    },
+    {
+      "NotifId": "not-8gvml4s4q",
+      "UserId": "user-9",
+      "Title": "🚚 New Delivery Assigned",
+      "Message": "Pickup OTP raised. Input code 763071 upon loading the warehouse materials.",
+      "Type": "DELIVERY",
+      "IsRead": false,
+      "CreatedAt": "2026-06-17T12:22:11.561Z",
+      "LinkRef": "/driver/my-deliveries"
+    },
+    {
+      "NotifId": "not-ha0xojddj",
+      "UserId": "user-8",
+      "Title": "📦 New Dispatch Material Prep Needed",
+      "Message": "Work Order WO-1736 raised. Please prepare 500 kg of materials for driver pickup.",
+      "Type": "INVENTORY",
+      "IsRead": false,
+      "CreatedAt": "2026-06-17T12:17:23.851Z",
+      "LinkRef": "/inventory/dispatch-orders"
+    },
+    {
+      "NotifId": "not-x393cqr49",
+      "UserId": "user-5",
+      "Title": "💼 New Process Assigned",
+      "Message": "Project Owner assigned you to \"Bed Linens Weaving Setup\". View specifications to start order placement.",
+      "Type": "PROCESS",
+      "IsRead": false,
+      "CreatedAt": "2026-06-17T12:12:05.248Z",
+      "LinkRef": "/process-owner/processes/proc-4"
+    },
+    {
+      "NotifId": "not-b4tmdrm86",
+      "UserId": "user-3",
+      "Title": "✅ Project Approved",
+      "Message": "Your project \"Organic Cotton Bed Sheets\" has been approved. You can now start assigning process owners.",
+      "Type": "PROJECT",
+      "IsRead": false,
+      "CreatedAt": "2026-06-17T12:10:22.592Z",
+      "LinkRef": "/project-owner/dashboard"
+    },
+    {
+      "NotifId": "not-1",
+      "UserId": "user-1",
+      "Title": "New Project Onboarded",
+      "Message": "Organic Cotton Bed Sheets stands pending for your SuperAdmin approval.",
+      "Type": "STAKEHOLDER",
+      "IsRead": false,
+      "CreatedAt": "2026-06-15T15:05:00Z",
+      "LinkRef": "/superadmin/projects"
+    },
+    {
+      "NotifId": "not-2",
+      "UserId": "user-3",
+      "Title": "Work Order Delivered",
+      "Message": "WO-POLO-001 knitted materials delivered to Knitting Co. successfully.",
+      "Type": "DELIVERY",
+      "IsRead": true,
+      "CreatedAt": "2026-06-01T13:42:00Z",
+      "LinkRef": "/tracking/wo-1"
+    }
+  ]
+}
