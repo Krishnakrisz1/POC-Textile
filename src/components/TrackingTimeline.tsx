@@ -52,6 +52,9 @@ export default function TrackingTimeline({ workOrder, subcontractor, driver }: P
   const getCurrentStepIndex = () => {
     if (workOrder.Status === "PulledBack") return -1;
     if (workOrder.Status === "Closed") return steps.length - 1;
+    if (workOrder.Status === "4.6_ReadyForPickup" || workOrder.Status === "4.7_ReturnDriverAssigned") {
+      return steps.findIndex(s => s.code === "4.5_ProcessCompleted");
+    }
     return steps.findIndex((s) => s.code === workOrder.Status);
   };
 
@@ -73,7 +76,7 @@ export default function TrackingTimeline({ workOrder, subcontractor, driver }: P
       progressPercentage = 30;
     }
     activeStatusLabel = "Vehicle Transit to Subcontractor Active";
-  } else if (workOrder.Status === "3_ReceivedBySubcontractor" || workOrder.Status === "4_InProcessAtSubcontractor" || workOrder.Status === "4.5_ProcessCompleted") {
+  } else if (workOrder.Status === "3_ReceivedBySubcontractor" || workOrder.Status === "4_InProcessAtSubcontractor" || workOrder.Status === "4.5_ProcessCompleted" || workOrder.Status === "4.6_ReadyForPickup" || workOrder.Status === "4.7_ReturnDriverAssigned") {
     progressPercentage = 100;
     activeStatusLabel = "Materials Handover Complete";
   } else if (workOrder.Status === "5_ReturnInTransit") {
