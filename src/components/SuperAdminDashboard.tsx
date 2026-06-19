@@ -61,16 +61,15 @@ export default function SuperAdminDashboard({ projects, workOrders, subcontracto
     <div className="space-y-8 animate-fade-in">
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-4">
         {[
           { label: "TOTAL PROJECTS", val: metrics.totalWorkOrders || 25, border: "border-l-slate-400", text: "text-slate-800", desc: "Supervised order lines", icon: <ClipboardList className="h-4 w-4 text-slate-400" /> },
           { label: "ACTIVE PROJECTS", val: 18, border: "border-l-blue-500", text: "text-blue-600", desc: "In assembly & weaving", icon: <CheckCircle className="h-4 w-4 text-slate-400" /> },
           { label: "COMPLETED PROJECTS", val: 2, border: "border-l-emerald-500", text: "text-emerald-600", desc: "Passed final QA", icon: <CheckCircle className="h-4 w-4 text-slate-400" /> },
           { label: "DELAYED PROJECTS", val: 3, border: "border-l-red-500", text: "text-red-600", desc: "Actions required", icon: <AlertTriangle className="h-4 w-4 text-slate-400" /> },
-          { label: "YARN IN TRANSIT", val: 12, border: "border-l-cyan-500", text: "text-cyan-600", desc: "OTP monitored", icon: <Truck className="h-4 w-4 text-slate-400" /> },
+          { label: "MATERIAL IN TRANSIT", val: 12, border: "border-l-cyan-500", text: "text-cyan-600", desc: "OTP monitored", icon: <Truck className="h-4 w-4 text-slate-400" /> },
           { label: "CONTRACTOR LOAD", val: 18, border: "border-l-indigo-500", text: "text-indigo-600", desc: "Processing stages", icon: <Layers className="h-4 w-4 text-slate-400" /> },
-          { label: "PENDING APPROVAL", val: 5, border: "border-l-orange-500", text: "text-orange-600", desc: "Needs MD sign-off", icon: <FileText className="h-4 w-4 text-slate-400" /> },
-          { label: "ACTIVE CONTRACTORS", val: 15, border: "border-l-emerald-500", text: "text-emerald-600", desc: "Assigned capacity", icon: <Users className="h-4 w-4 text-slate-400" /> }
+          { label: "PENDING APPROVAL", val: 5, border: "border-l-orange-500", text: "text-orange-600", desc: "Needs MD sign-off", icon: <FileText className="h-4 w-4 text-slate-400" /> }
         ].map((kpi) => (
           <div key={kpi.label} className={`bg-white rounded-lg border border-slate-200 border-l-4 ${kpi.border} p-3 shadow-xs flex flex-col justify-between`}>
             <div className="flex justify-between items-start mb-2">
@@ -279,7 +278,7 @@ export default function SuperAdminDashboard({ projects, workOrders, subcontracto
             <h3 className="text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-1">
               SECTION 3 : PROJECT DRILL DOWN / <span className="text-blue-600">POLO-001</span>
             </h3>
-            <h2 className="text-sm font-black text-slate-800 tracking-tight">ACTIVE SUBCONTRACTOR MILESTONES</h2>
+            <h2 className="text-sm font-black text-slate-800 tracking-tight">PROCESS EXECUTION FLOW</h2>
           </div>
           <div className="border border-slate-200 rounded-lg p-2 px-3 text-right">
             <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Overall Progress</span>
@@ -310,7 +309,7 @@ export default function SuperAdminDashboard({ projects, workOrders, subcontracto
 
               <div className="mb-4">
                 <div className="flex justify-between text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                  <span>Yield</span>
+                  <span>Progress</span>
                   <span>{card.yield}%</span>
                 </div>
                 <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -320,11 +319,11 @@ export default function SuperAdminDashboard({ projects, workOrders, subcontracto
 
               <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100">
                 <div>
-                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block">Vendor</span>
+                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block">Sub-Contractor</span>
                   <span className="text-[10px] font-bold text-slate-700 truncate block">{card.vendor}</span>
                 </div>
                 <div>
-                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block">Admin</span>
+                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block">Process Owner</span>
                   <span className="text-[10px] font-bold text-slate-700 truncate block">{card.admin}</span>
                 </div>
               </div>

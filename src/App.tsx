@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   Layers, Users, TrendingUp, CheckCircle, Clock, AlertCircle, AlertTriangle, Truck, Eye, FileText, Check, CheckSquare, Sparkles, LogOut, Code, ClipboardList, Info, HelpCircle, X, CheckCheck, Search,
-  ArrowRight, ShieldCheck, Mail, Database, RefreshCw, Plus, Trash2, Calendar, RotateCcw
+  ArrowRight, ShieldCheck, Mail, Database, RefreshCw, Plus, Trash2, Calendar, RotateCcw, PanelLeftClose, PanelLeftOpen
 } from "lucide-react";
 import { User, Project, Process, Subcontractor, WorkOrder, InventoryItem, Notification } from "./types";
 import NotificationsDrawer from "./components/NotificationsDrawer";
@@ -42,6 +42,11 @@ export default function App() {
   });
   const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string | null>(null);
   const [viewingProjectDetailsId, setViewingProjectDetailsId] = useState<string | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
+
+  useEffect(() => {
+    localStorage.setItem("sidebarCollapsed", sidebarCollapsed.toString());
+  }, [sidebarCollapsed]);
 
   useEffect(() => {
     localStorage.setItem("textile_poc_user", JSON.stringify(currentUser));
@@ -141,23 +146,37 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row font-sans">
 
       {/* Sleek Interface Sidebar Navigation */}
-      <aside className="hidden lg:flex w-64 bg-[#0F172A] text-slate-300 flex-col shrink-0 border-r border-[#1E293B]">
+      <aside className={`hidden lg:flex transition-all duration-300 ease-in-out bg-[#0F172A] text-slate-300 flex-col shrink-0 border-r border-[#1E293B] ${sidebarCollapsed ? "w-20" : "w-64"}`}>
         {/* Top Branding Section with custom spacing */}
-        <div className="px-6 py-6 border-b border-slate-800 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-blue-600 p-2 text-white shadow-md shadow-blue-500/20">
+        <div className={`${sidebarCollapsed ? "px-0 justify-center" : "px-6"} py-6 border-b border-slate-800 shrink-0 flex items-center justify-between`}>
+          <div className={`flex items-center ${sidebarCollapsed ? "justify-center mx-auto" : "gap-3"}`}>
+            <div className="rounded-lg bg-blue-600 p-2 text-white shadow-md shadow-blue-500/20 shrink-0">
               <Layers className="h-5 w-5" />
             </div>
-            <div>
+            {!sidebarCollapsed && (
+              <div className="transition-opacity duration-300">
               <h1 className="font-bold text-base text-white tracking-tight leading-tight">
                 Sakthithara
               </h1>
               <span className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
                 Textile Systems
               </span>
-            </div>
+              </div>
+            )}
           </div>
+          {!sidebarCollapsed && (
+            <button onClick={() => setSidebarCollapsed(true)} className="p-1 hover:bg-slate-800 rounded-md text-slate-400 hover:text-white transition-colors" title="Collapse Sidebar">
+              <PanelLeftClose className="h-4.5 w-4.5" />
+            </button>
+          )}
         </div>
+        {sidebarCollapsed && (
+          <div className="flex justify-center pt-3">
+            <button onClick={() => setSidebarCollapsed(false)} className="p-1.5 hover:bg-slate-800 rounded-md text-slate-400 hover:text-white transition-colors" title="Expand Sidebar">
+              <PanelLeftOpen className="h-5 w-5" />
+            </button>
+          </div>
+        )}
 
         {/* Navigation - Elegant states matching the 'Sleek Interface' specification */}
         <nav className="flex-1 px-4 py-8 space-y-1.5 overflow-y-auto">
@@ -170,13 +189,14 @@ export default function App() {
               else if (currentUser.role === "INVENTORY_OWNER") setCurrentPath("/inventory/dashboard");
               else if (currentUser.role === "PORTER_DRIVER") setCurrentPath("/driver/my-deliveries");
             }}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-lg transition-colors cursor-pointer ${currentPath === "/" || currentPath.endsWith("dashboard") || currentPath === "/driver/my-deliveries"
+            title="My Dashboard"
+            className={`w-full flex items-center ${sidebarCollapsed ? "justify-center px-0" : "gap-3 px-4"} py-2.5 text-sm font-semibold rounded-lg transition-colors cursor-pointer ${currentPath === "/" || currentPath.endsWith("dashboard") || currentPath === "/driver/my-deliveries"
               ? "bg-blue-600 text-white shadow-sm shadow-blue-500/10"
               : "text-slate-400 hover:text-white hover:bg-slate-800"
               }`}
           >
-            <ClipboardList className="h-4.5 w-4.5" />
-            <span>My Dashboard</span>
+            <ClipboardList className="h-4.5 w-4.5 shrink-0" />
+            {!sidebarCollapsed && <span className="transition-opacity duration-300">My Dashboard</span>}
           </button>
 
           {workOrders.length > 0 && (
@@ -185,13 +205,14 @@ export default function App() {
                 setSelectedWorkOrderId(workOrders[0].WorkOrderId);
                 setCurrentPath(`/tracking/${workOrders[0].WorkOrderId}`);
               }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-lg transition-colors cursor-pointer ${currentPath.startsWith("/tracking/")
+              title="Live Tracker"
+              className={`w-full flex items-center ${sidebarCollapsed ? "justify-center px-0" : "gap-3 px-4"} py-2.5 text-sm font-semibold rounded-lg transition-colors cursor-pointer ${currentPath.startsWith("/tracking/")
                 ? "bg-blue-600 text-white shadow-sm shadow-blue-500/10"
                 : "text-slate-400 hover:text-white hover:bg-slate-800"
                 }`}
             >
-              <Truck className="h-4.5 w-4.5" />
-              <span>Live Tracker</span>
+              <Truck className="h-4.5 w-4.5 shrink-0" />
+              {!sidebarCollapsed && <span className="transition-opacity duration-300">Live Tracker</span>}
             </button>
           )}
 
@@ -199,15 +220,17 @@ export default function App() {
         </nav>
 
         {/* Profile Footer display in Sidebar - elegant avatar indicator */}
-        <div className="p-6 border-t border-slate-800 shrink-0 bg-[#0B1222] text-xs">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-full bg-slate-800 border border-slate-705 flex items-center justify-center font-bold text-blue-400 font-mono">
+        <div className={`${sidebarCollapsed ? "p-4 flex justify-center" : "p-6"} border-t border-slate-800 shrink-0 bg-[#0B1222] text-xs transition-all duration-300`}>
+          <div className={`flex items-center ${sidebarCollapsed ? "justify-center" : "gap-3"}`}>
+            <div title={currentUser.name} className="h-9 w-9 shrink-0 rounded-full bg-slate-800 border border-slate-705 flex items-center justify-center font-bold text-blue-400 font-mono">
               {currentUser.name.split(" ").map(n => n[0]).slice(0, 2).join("")}
             </div>
-            <div className="min-w-0 flex-1">
+            {!sidebarCollapsed && (
+              <div className="min-w-0 flex-1 transition-opacity duration-300">
               <h4 className="font-bold text-white truncate leading-none mb-1">{currentUser.name}</h4>
               <p className="text-[10px] text-slate-400 truncate leading-none font-medium">{currentUser.roleName}</p>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </aside>
@@ -272,6 +295,7 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4">
+            <NotificationsDrawer userId={currentUser.id} />
             {/* System Time clock metadata */}
             <div className="hidden md:flex flex-col text-right font-mono text-[10px] text-slate-400 shrink-0">
               <span className="font-bold text-slate-500 uppercase tracking-wide leading-none mb-0.5">System Time (IST)</span>
@@ -404,6 +428,10 @@ export default function App() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(woData)
                   });
+                  syncDatabase();
+                }}
+                onCompleteOperation={async (woId, opName) => {
+                  await fetch(`/api/work-orders/${woId}/operations/${encodeURIComponent(opName)}/complete`, { method: "POST" });
                   syncDatabase();
                 }}
                 onPullBackOrder={async (id, pbData) => {

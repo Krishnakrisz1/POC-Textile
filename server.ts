@@ -2,10 +2,46 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
-import { JSONDB, User, Project, Process, Subcontractor, WorkOrder, MaterialDispatch, Delivery, ReturnPickup, OTPLog, EmailLog, InventoryItem, InventoryTransaction, TrackingEvent, PullBack, Notification } from "./src/server/db";
+import { JSONDB, User, Project, Process, Subcontractor, WorkOrder, MaterialDispatch, Delivery, ReturnPickup, OTPLog, EmailLog, InventoryItem, InventoryTransaction, TrackingEvent, PullBack, Notification, STAGE_OPERATIONS_MAPPING } from "./src/server/db";
 
 const app = express();
 const PORT = 3000;
+
+app.post("/api/work-orders/:id/operations/:operationName/complete", (req, res) => {
+  const { id, operationName } = req.params;
+  const { userId } = req.body;
+  const workOrders = JSONDB.get("workOrders");
+  const woIdx = workOrders.findIndex((w) => w.WorkOrderId === id);
+  if (woIdx === -1) return res.status(404).json({ error: "Work Order not found." });
+
+  const wo = workOrders[woIdx];
+  if (!wo.operations) wo.operations = [];
+
+  const opIdx = wo.operations.findIndex(o => o.name === decodeURIComponent(operationName));
+  if (opIdx === -1) return res.status(404).json({ error: "Operation not found in this Work Order." });
+
+  wo.operations[opIdx].completed = true;
+  wo.operations[opIdx].completedAt = new Date().toISOString();
+
+  JSONDB.set("workOrders", workOrders);
+
+  // Add event to timeline
+  const trackingEvents = JSONDB.get("trackingEvents");
+  trackingEvents.unshift({
+    EventId: `evt-${generateId()}`,
+    WorkOrderId: id,
+    DriverId: "system",
+    Latitude: 0,
+    Longitude: 0,
+    EventType: "OperationCompleted",
+    Timestamp: new Date().toISOString(),
+    Remarks: `${decodeURIComponent(operationName)} Completed`
+  });
+  JSONDB.set("trackingEvents", trackingEvents);
+
+  res.json(wo);
+});
+
 
 app.use(express.json());
 

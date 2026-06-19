@@ -67,6 +67,11 @@ export default function ProjectOwnerDashboard({ projects, processes, workOrders,
         ) : (
           myProjects.map((p) => {
             const myProcs = processes.filter((proc) => proc.ProjectId === p.ProjectId);
+            const pWorkOrders = workOrders.filter(w => myProcs.some(proc => proc.ProcessId === w.ProcessId));
+            const totalOps = pWorkOrders.reduce((acc, w) => acc + (w.operations?.length || 0), 0);
+            const completedOps = pWorkOrders.reduce((acc, w) => acc + (w.operations?.filter(o => o.completed).length || 0), 0);
+            const overallProgressPercent = totalOps > 0 ? Math.round((completedOps / totalOps) * 100) : 0;
+
 
             return (
               <div key={p.ProjectId} className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xs space-y-4">

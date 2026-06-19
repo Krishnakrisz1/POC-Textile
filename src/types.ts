@@ -52,6 +52,24 @@ export interface Subcontractor {
   IsActive: boolean;
 }
 
+
+export const STAGE_OPERATIONS_MAPPING: Record<string, string[]> = {
+  "Knitting": ["Fabric Knitting", "Loop Formation", "Roll Winding"],
+  "Dyeing": ["GSM Verification", "Shade Verification", "Fabric Dyeing"],
+  "Cutting": ["Fabric Inspection", "Fabric Spreading", "Pattern Cutting"],
+  "Printing": ["Logo Printing", "Heat Transfer Printing", "Drying"],
+  "Embroidery": ["Design Punching", "Embroidery Stitching", "Thread Trimming"],
+  "Stitching": ["Collar Stitching", "Sleeve Stitching", "Side Stitching"],
+  "Ironing": ["Garment Ironing", "Quality Check"],
+  "Packing": ["Folding", "Poly Bag Packing", "Carton Packing"]
+};
+
+export interface Operation {
+  name: string;
+  completed: boolean;
+  completedAt?: string;
+}
+
 export interface WorkOrder {
   WorkOrderId: string;
   WorkOrderCode: string;
@@ -95,6 +113,7 @@ export interface WorkOrder {
   pullbackReceiptOTP?: string;
   pullbackReceiptOTPGeneratedAt?: string;
   pullbackReceiptVerifiedAt?: string;
+  operations?: Operation[];
 }
 
 export interface MaterialDispatch {
@@ -191,7 +210,7 @@ export interface TrackingEvent {
   DriverId: string;
   Latitude: number;
   Longitude: number;
-  EventType: "PickedUp" | "InTransit" | "Delivered" | "ReturnPickedUp" | "ReturnedToWarehouse";
+  EventType: "PickedUp" | "InTransit" | "Delivered" | "ReturnPickedUp" | "ReturnedToWarehouse" | "OperationCompleted";
   Timestamp: string;
   Remarks: string;
 }

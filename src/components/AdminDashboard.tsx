@@ -245,9 +245,8 @@ export default function AdminDashboard({ projects, subcontractors, users, onOnbo
                   }}
                   className="w-full bg-slate-50 border border-slate-205 rounded-lg px-3 py-2 text-slate-800"
                 />
-                <span className="text-[10px] text-slate-400 mt-1 block">Please attach the instructions and QC documents.</span>
+                <span className="text-[10px] text-slate-400 mt-1 block">Please attach the customer instruction docs</span>
               </div>
-
               <div>
                 <label className="block text-slate-500 mb-1 font-semibold">Assign Project Owner</label>
                 <select
@@ -327,7 +326,7 @@ export default function AdminDashboard({ projects, subcontractors, users, onOnbo
               type="submit"
               className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 font-bold text-center rounded-xl transition duration-150 cursor-pointer text-sm"
             >
-              Submit Project & Deploy Initial Process
+              Submit Project
             </button>
           </form>
         </div>

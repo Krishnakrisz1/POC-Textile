@@ -64,31 +64,23 @@ export default function NotificationsDrawer({ userId }: Props) {
 
   return (
     <>
-      {/* Floating Toggle Button */}
-      <div className="fixed bottom-6 right-6 z-40 flex items-center gap-2">
+      {/* Header Notification Bell Toggle */}
+      <div className="relative flex items-center mr-2 md:mr-0">
         <button
           onClick={() => {
             setIsOpen(!isOpen);
             fetchLogs();
           }}
-          className="flex h-14 items-center gap-2 rounded-full bg-slate-900 px-5 text-white shadow-xl hover:bg-slate-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900"
+          className="relative p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors focus:outline-none"
+          title="System Logs & Alerts"
           id="btn-toggle-drawer"
         >
-          <div className="relative">
-            <Bell className="h-5 w-5" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white animate-pulse">
-                {unreadCount}
-              </span>
-            )}
-          </div>
-          <span className="text-sm font-semibold tracking-wide">System Logs & Alerts</span>
-          <div className="relative border-l border-slate-700 pl-3 ml-1 flex items-center">
-            <Mail className="h-4 w-4 text-slate-400" />
-            {emails.length > 0 && (
-              <span className="absolute top-2 right-2 flex h-2 w-2 rounded-full bg-emerald-400" />
-            )}
-          </div>
+          <Bell className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-bold text-white shadow-sm leading-none">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
         </button>
       </div>
 

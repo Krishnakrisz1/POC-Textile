@@ -7,6 +7,33 @@ import { User, Project, Process, Subcontractor, WorkOrder, InventoryItem, Notifi
 import NotificationsDrawer from "./NotificationsDrawer";
 import TrackingTimeline from "./TrackingTimeline";
 
+const getOperationsForStage = (stage: string, status: string) => {
+  const map: Record<string, string[]> = {
+    "KNITTING": ["Fabric Knitting", "Loop Formation", "Roll Winding"],
+    "DYEING": ["GSM Verification", "Shade Verification", "Fabric Dyeing"],
+    "CUTTING": ["Fabric Inspection", "Fabric Spreading", "Pattern Cutting"],
+    "PRINTING": ["Logo Printing", "Heat Transfer Printing", "Drying"],
+    "EMBROIDERY": ["Design Punching", "Embroidery Stitching", "Thread Trimming"],
+    "STITCHING": ["Collar Stitching", "Sleeve Stitching", "Side Stitching"],
+    "PACKING": ["Folding", "Poly Bag Packing", "Carton Packing"]
+  };
+  
+  const ops = map[stage.toUpperCase()] || [];
+  if (ops.length === 0) return null;
+  
+  const isCompleted = status === "Completed";
+  const isInProgress = status === "InProgress";
+  
+  return ops.map((op, idx) => {
+    let icon = "○";
+    if (isCompleted) icon = "✓";
+    else if (isInProgress) {
+      icon = idx === 0 ? "✓" : "○";
+    }
+    return `${op} ${icon}`;
+  }).join(" • ");
+};
+
 const formatDate = (dateString: string | undefined) => {
   if (!dateString || dateString === 'N/A') return 'N/A';
   const date = new Date(dateString);
@@ -28,6 +55,7 @@ interface ProcessOwnerProps {
   onViewWo: (woId: string) => void;
   onUpdateStatus: (woId: string, status: string) => Promise<void>;
   onViewDetails?: (id: string) => void;
+  onCompleteOperation?: any;
 }
 
 export default function ProcessOwnerDashboard({ projects, processes, subcontractors, workOrders, currentUser, onStartProcess, onRaiseWorkOrder, onPullBackOrder, onAssignReturnPickup, onViewWo, onUpdateStatus, onViewDetails }: ProcessOwnerProps) {
@@ -132,6 +160,9 @@ export default function ProcessOwnerDashboard({ projects, processes, subcontract
                         <span className="text-[10px] font-mono text-indigo-655 font-bold block">
                           {p.ProcessType}
                         </span>
+                        <div className="mt-1.5 text-[12px] text-slate-500 font-medium leading-tight max-w-[280px]">
+                          {getOperationsForStage(p.ProcessType, p.Status)}
+                        </div>
                       </div>
 
                       <div className="text-right flex flex-col items-end gap-2">
