@@ -21,6 +21,9 @@ export interface Project {
   CreatedAt: string;
   ApprovedAt?: string;
   ApprovedBy?: string;
+  OrderQuantity?: number | string;
+  QuantityToEnter?: number | string;
+  Priority?: string;
 }
 
 export interface Process {
@@ -58,20 +61,40 @@ export interface WorkOrder {
   TotalQuantity: number;
   Unit: string;
   Status:
+    | "0_AwaitingPulledBackMaterial"
     | "1_ToBeDispatched"
     | "2_InTransit_ToSubcontractor"
     | "3_ReceivedBySubcontractor"
     | "4_InProcessAtSubcontractor"
+    | "4.5_ProcessCompleted"
+    | "4.6_ReadyForPickup"
+    | "4.7_ReturnDriverAssigned"
     | "5_ReturnInTransit"
     | "6_ReceivedAtCompanyStore"
     | "7_Completed"
     | "PulledBack"
+    | "PulledBack_ReadyForPickup"
+    | "PulledBack_ReturnInTransit"
+    | "PulledBack_Received"
+    | "PulledBack_Verified"
     | "Closed";
   DispatchDate?: string;
   ExpectedReturnDate: string;
   ActualReturnDate?: string;
   CreatedBy: string;
   CreatedAt: string;
+  pullbackReason?: string;
+  pullbackRequestedAt?: string;
+  pullbackRequestedBy?: string;
+  pullbackReceivedAt?: string;
+  pullbackVerifiedAt?: string;
+  SubcontractorOTP?: string;
+  pullbackPickupOTP?: string;
+  pullbackPickupOTPGeneratedAt?: string;
+  pullbackPickupVerifiedAt?: string;
+  pullbackReceiptOTP?: string;
+  pullbackReceiptOTPGeneratedAt?: string;
+  pullbackReceiptVerifiedAt?: string;
 }
 
 export interface MaterialDispatch {
@@ -106,12 +129,17 @@ export interface ReturnPickup {
   ReturnId: string;
   WorkOrderId: string;
   DriverId: string;
+  VehicleNumber?: string;
+  Status?: string;
+  GoodsReceiptOTP?: string;
+  PickupOTP?: string;
   PickupDate?: string;
   ReturnedAt?: string;
   CompanyAcknowledgedAt?: string;
   CompanyAcknowledgedBy?: string;
   ReturnQuantity: number;
   ReturnChallanPath?: string;
+  IsPullBack?: boolean;
 }
 
 export interface OTPLog {

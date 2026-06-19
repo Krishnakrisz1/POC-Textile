@@ -219,7 +219,7 @@ app.get("/api/projects/:id", (req, res) => {
 });
 
 app.post("/api/projects", (req, res) => {
-  const { ProjectName, CustomerName, OrderInstruction, ProjectOwnerId, Timeline, Priority } = req.body;
+  const { ProjectName, CustomerName, OrderInstruction, ProjectOwnerId, Timeline, Priority, OrderQuantity, QuantityToEnter } = req.body;
   if (!ProjectName || !CustomerName || !ProjectOwnerId) {
     return res.status(400).json({ error: "Missing required project fields." });
   }
@@ -236,6 +236,8 @@ app.post("/api/projects", (req, res) => {
     ProjectOwnerId,
     Timeline: Timeline || [],
     Status: "PendingApproval",
+    OrderQuantity,
+    QuantityToEnter,
     CreatedAt: new Date().toISOString()
   };
 
@@ -316,7 +318,7 @@ app.get("/api/processes/:id", (req, res) => {
 
 app.post("/api/processes", (req, res) => {
   const { ProjectId, ProcessName, ProcessType, ProcessInstruction, ExpectedDeliveryDays, Priority, ProcessOwnerId, QCRequired } = req.body;
-  if (!ProjectId || !ProcessName || !ProcessType || !ProcessOwnerId) {
+  if (!ProjectId || !ProcessName || !ProcessType) {
     return res.status(400).json({ error: "Missing required components to onboard process." });
   }
 
@@ -327,24 +329,26 @@ app.post("/api/processes", (req, res) => {
     ProcessName,
     ProcessType,
     ProcessInstruction: ProcessInstruction || "",
-    ProcessOwnerId,
+    ProcessOwnerId: ProcessOwnerId || "",
     Priority: Priority || "Medium",
     ExpectedDeliveryDays: Number(ExpectedDeliveryDays) || 7,
-    Status: "Assigned",
+    Status: ProcessOwnerId ? "Assigned" : "Pending",
     QCRequired: !!QCRequired
   };
 
   processes.push(newProcess);
   JSONDB.set("processes", processes);
 
-  // Notify Process Owner
-  addSystemNotification(
-    ProcessOwnerId,
-    "💼 Process Assigned to You",
-    `You have been assigned as Process Owner for "${ProcessName}" in project.`,
-    "PROCESS",
-    `/process-owner/processes/${newProcess.ProcessId}`
-  );
+  // Notify Process Owner if assigned
+  if (ProcessOwnerId) {
+    addSystemNotification(
+      ProcessOwnerId,
+      "💼 Process Assigned to You",
+      `You have been assigned as Process Owner for "${ProcessName}" in project.`,
+      "PROCESS",
+      `/process-owner/processes/${newProcess.ProcessId}`
+    );
+  }
 
   res.json(newProcess);
 });
@@ -637,6 +641,8 @@ app.post("/api/dispatch/:id/verify-otp", (req, res) => {
     const sub = subcontractors.find((s) => s.SubcontractorId === workOrders[woIdx].SubcontractorId);
     if (sub) {
       const deliveryOTP = Math.floor(100000 + Math.random() * 900000).toString();
+      workOrders[woIdx].SubcontractorOTP = deliveryOTP;
+      JSONDB.set("workOrders", workOrders);
       
       // Save delivery details
       const deliveries = JSONDB.get("deliveries");
@@ -720,7 +726,14 @@ app.post("/api/delivery/:dispatchId/verify-otp", (req, res) => {
   }
 
   const delivery = deliveries[delIdx];
-  if (delivery.SubcontractorOTP !== otp) {
+
+  // Fetch WorkOrder to get SubcontractorOTP
+  const workOrders = JSONDB.get("workOrders");
+  const woIdx = workOrders.findIndex((w) => w.WorkOrderId === delivery.WorkOrderId);
+  if (woIdx === -1) return res.status(404).json({ error: "Work Order not found." });
+
+  const workOrder = workOrders[woIdx];
+  if (workOrder.SubcontractorOTP !== otp) {
     return res.status(400).json({ error: "Incorrect Subcontractor verification Code. Match failed." });
   }
 
@@ -731,10 +744,10 @@ app.post("/api/delivery/:dispatchId/verify-otp", (req, res) => {
   JSONDB.set("deliveries", deliveries);
 
   // Update Work Order to ReceivedBySubcontractor (status 3)
-  const workOrders = JSONDB.get("workOrders");
-  const woIdx = workOrders.findIndex((w) => w.WorkOrderId === delivery.WorkOrderId);
-  if (woIdx !== -1) {
-    workOrders[woIdx].Status = "3_ReceivedBySubcontractor";
+  // We already fetched workOrders and found woIdx above.
+  const workOrderIdx = workOrders.findIndex((w) => w.WorkOrderId === delivery.WorkOrderId);
+  if (workOrderIdx !== -1) {
+    workOrders[workOrderIdx].Status = "3_ReceivedBySubcontractor";
     JSONDB.set("workOrders", workOrders);
 
     // Track delivery arrival event
@@ -951,19 +964,55 @@ app.post("/api/return/assign-driver", (req, res) => {
   // Update WO status
   const workOrders = JSONDB.get("workOrders");
   const woIdx = workOrders.findIndex(w => w.WorkOrderId === WorkOrderId);
+  let isPullback = false;
   if (woIdx !== -1) {
-    workOrders[woIdx].Status = "4.7_ReturnDriverAssigned";
+    if (workOrders[woIdx].Status.includes("PulledBack")) {
+      isPullback = true;
+      const pickupOTP = Math.floor(100000 + Math.random() * 900000).toString();
+      workOrders[woIdx].pullbackPickupOTP = pickupOTP;
+      workOrders[woIdx].pullbackPickupOTPGeneratedAt = new Date().toISOString();
+      
+      const targetRet = idx !== -1 ? returnPickups[idx] : returnPickups[returnPickups.length - 1];
+      targetRet.PickupOTP = pickupOTP;
+      JSONDB.set("returnPickups", returnPickups);
+      
+      const subcontractors = JSONDB.get("subcontractors");
+      const sub = subcontractors.find((s: any) => s.SubcontractorId === workOrders[woIdx].SubcontractorId);
+      const targetEmail = sub ? sub.Email : "subcontractor@example.com";
+      
+      console.log(`[PULLBACK_WORKFLOW] Driver Assigned & OTP Generated: ${pickupOTP} for WorkOrder: ${workOrders[woIdx].WorkOrderCode}`);
+      sendSimulatedEmail(
+        workOrders[woIdx].WorkOrderId,
+        targetEmail,
+        `EMERGENCY PULLBACK REQUEST`,
+        `Work Order: ${workOrders[woIdx].WorkOrderCode}\n\nDriver Assigned For Pullback\n\nPullback Pickup OTP:\n${pickupOTP}\n\nProvide this OTP to the returning driver when materials are collected.\n\nReason:\n${workOrders[woIdx].pullbackReason}\n\nTimestamp:\n${new Date().toISOString()}`
+      );
+    } else {
+      workOrders[woIdx].Status = "4.7_ReturnDriverAssigned";
+    }
     JSONDB.set("workOrders", workOrders);
   }
   
-  // Notify driver with Goods Receipt OTP
+  // Notify driver about the pickup
   addSystemNotification(
     DriverId,
     "🚚 Return Pickup Assigned",
-    `Pickup OTP will be provided by subcontractor. Your Goods Receipt OTP (give to Store Owner on arrival) is ${goodsReceiptOTP}.`,
+    `Pickup OTP will be provided by subcontractor. Obtain it from them during pickup.`,
     "DELIVERY",
     `/driver/my-deliveries`
   );
+
+  // Notify subcontractor with the Pickup OTP
+  if (woIdx !== -1 && !isPullback) {
+    const pickupOTP = idx !== -1 ? returnPickups[idx].PickupOTP : returnPickups[returnPickups.length - 1].PickupOTP;
+    addSystemNotification(
+      workOrders[woIdx].SubcontractorId,
+      "📦 Return Driver Assigned",
+      `Driver has been assigned for pickup. Provide this Pickup OTP to the driver upon arrival: ${pickupOTP}`,
+      "PRODUCTION",
+      `/subcontractor/active`
+    );
+  }
 
   res.json({ success: true });
 });
@@ -987,9 +1036,22 @@ app.post("/api/return/:id/pickup-confirm", (req, res) => {
   const workOrders = JSONDB.get("workOrders");
   const woIdx = workOrders.findIndex((w) => w.WorkOrderId === returnPickups[idx].WorkOrderId);
   if (woIdx !== -1) {
-    workOrders[woIdx].Status = "5_ReturnInTransit";
+    if (workOrders[woIdx].Status.includes("PulledBack")) {
+      workOrders[woIdx].Status = "PulledBack_ReturnInTransit";
+    } else {
+      workOrders[woIdx].Status = "5_ReturnInTransit";
+    }
     JSONDB.set("workOrders", workOrders);
   }
+
+  // Notify Store Owner with Goods Receipt OTP
+  addSystemNotification(
+    "user-8", // Store Owner
+    "📦 Incoming Return Delivery",
+    `A return delivery for Work Order ${woIdx !== -1 ? workOrders[woIdx].WorkOrderCode : 'Unknown'} is in transit. Provide this OTP to the driver on arrival: ${returnPickups[idx].GoodsReceiptOTP}`,
+    "INVENTORY",
+    `/store/dashboard`
+  );
 
   res.json(returnPickups[idx]);
 });
@@ -1010,7 +1072,11 @@ app.post("/api/return/:id/received-at-company", (req, res) => {
   const workOrders = JSONDB.get("workOrders");
   const woIdx = workOrders.findIndex((w) => w.WorkOrderId === returnPickups[idx].WorkOrderId);
   if (woIdx !== -1) {
-    workOrders[woIdx].Status = "6_ReceivedAtCompanyStore";
+    if (workOrders[woIdx].Status.includes("PulledBack")) {
+      workOrders[woIdx].Status = "PulledBack_Received";
+    } else {
+      workOrders[woIdx].Status = "6_ReceivedAtCompanyStore";
+    }
     JSONDB.set("workOrders", workOrders);
   }
 
@@ -1038,13 +1104,24 @@ app.post("/api/return/:id/company-otp-confirm", (req, res) => {
   const workOrders = JSONDB.get("workOrders");
   const woIdx = workOrders.findIndex((w) => w.WorkOrderId === ret.WorkOrderId);
   if (woIdx !== -1) {
-    workOrders[woIdx].Status = "6_ReceivedAtCompanyStore";
+    if (workOrders[woIdx].Status.includes("PulledBack")) {
+      workOrders[woIdx].Status = "PulledBack_Received";
+      workOrders[woIdx].pullbackReceivedAt = new Date().toISOString();
+    } else {
+      workOrders[woIdx].Status = "6_ReceivedAtCompanyStore";
+    }
     workOrders[woIdx].ActualReturnDate = new Date().toISOString();
     JSONDB.set("workOrders", workOrders);
 
     // Return materials into stock list
     const processes = JSONDB.get("processes");
     const proc = processes.find((p) => p.ProcessId === workOrders[woIdx].ProcessId);
+    
+    if (proc) {
+      proc.Status = "Completed";
+      JSONDB.set("processes", processes);
+    }
+
     // Prepare transaction journal for the returns
     const inventory = JSONDB.get("inventory");
     const transactions = JSONDB.get("transactions");
@@ -1104,60 +1181,134 @@ app.post("/api/return/:id/company-otp-confirm", (req, res) => {
 
 // Pull Back Actions
 app.post("/api/work-orders/:id/pull-back", (req, res) => {
-  const { Reason, InitiatedBy, OldSubcontractorId, NewSubcontractorId } = req.body;
+  const { Reason, InitiatedBy } = req.body;
   const workOrders = JSONDB.get("workOrders");
   const idx = workOrders.findIndex((w) => w.WorkOrderId === req.params.id);
   if (idx === -1) return res.status(404).json({ error: "Work Order not found." });
 
   const oldWo = workOrders[idx];
-  oldWo.Status = "PulledBack";
+  oldWo.Status = "PulledBack_ReadyForPickup";
+  oldWo.pullbackReason = Reason || "Emergency Pullback";
+  oldWo.pullbackRequestedAt = new Date().toISOString();
+  oldWo.pullbackRequestedBy = InitiatedBy;
   JSONDB.set("workOrders", workOrders);
 
-  // Log pullback
-  const pullbacks = JSONDB.get("pullbacks");
-  const pbId = `pull-${generateId()}`;
-  
-  // Instantly spin up a NEW Work Order for the new subcontractor as specified
-  const newWoCode = generateCode("WO-REBUILD");
-  const newWo: WorkOrder = {
-    WorkOrderId: `wo-${generateId()}`,
-    WorkOrderCode: newWoCode,
-    ProcessId: oldWo.ProcessId,
-    SubcontractorId: NewSubcontractorId || "sub-1", // default knitting or alternative
-    MaterialDetails: oldWo.MaterialDetails,
-    TotalQuantity: oldWo.TotalQuantity,
-    Unit: oldWo.Unit,
-    Status: "1_ToBeDispatched",
-    ExpectedReturnDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    CreatedBy: InitiatedBy,
-    CreatedAt: new Date().toISOString()
+  const returnPickups = JSONDB.get("returnPickups");
+  const newReturn = {
+    ReturnId: `ret-${generateId()}`,
+    WorkOrderId: oldWo.WorkOrderId,
+    DriverId: "",
+    VehicleNumber: "",
+    PickupDate: "",
+    ReturnQuantity: oldWo.TotalQuantity,
+    Status: "PendingAssignment",
+    IsPullBack: true
   };
-
-  workOrders.unshift(newWo);
-  JSONDB.set("workOrders", workOrders);
-
-  const pbRecord: PullBack = {
-    PullBackId: pbId,
-    WorkOrderId: req.params.id,
-    Reason: Reason || "Delay",
-    InitiatedBy,
-    InitiatedAt: new Date().toISOString(),
-    OldSubcontractorId,
-    NewWorkOrderId: newWo.WorkOrderId
-  };
-  pullbacks.push(pbRecord);
-  JSONDB.set("pullbacks", pullbacks);
+  returnPickups.push(newReturn);
+  JSONDB.set("returnPickups", returnPickups);
 
   // Notify Store and SuperAdmin
   addSystemNotification(
     "user-1",
     "⚠️ Material PullBack Action Alert",
-    `Work Order ${oldWo.WorkOrderCode} was pulled back due to subcontractor ${Reason || "issues"}. Dispatch reconstituted as ${newWoCode}.`,
+    `Work Order ${oldWo.WorkOrderCode} was pulled back due to: ${oldWo.pullbackReason}.`,
     "ALERT",
     `/superadmin/work-orders`
   );
 
-  res.json({ success: true, pullBack: pbRecord, newWorkOrder: newWo });
+  res.json({ success: true, pullBackReason: oldWo.pullbackReason });
+});
+
+// Driver verify Pullback Pickup OTP
+app.post("/api/work-orders/:id/verify-pullback-pickup", (req, res) => {
+  const { otp } = req.body;
+  const workOrders = JSONDB.get("workOrders");
+  const idx = workOrders.findIndex((w) => w.WorkOrderId === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Work Order not found." });
+
+  const wo = workOrders[idx];
+  if (wo.pullbackPickupOTP !== otp) {
+    console.log(`[PULLBACK_WORKFLOW] Pullback OTP verification FAILED: received ${otp}, expected ${wo.pullbackPickupOTP}`);
+    return res.status(400).json({ error: "Invalid Pullback Pickup OTP." });
+  }
+
+  wo.Status = "PulledBack_ReturnInTransit";
+  wo.pullbackPickupVerifiedAt = new Date().toISOString();
+  JSONDB.set("workOrders", workOrders);
+  
+  const returns = JSONDB.get("returnPickups");
+  const retIdx = returns.findIndex((r) => r.WorkOrderId === wo.WorkOrderId);
+  if (retIdx !== -1) {
+    returns[retIdx].Status = "InTransit";
+    returns[retIdx].PickupDate = new Date().toISOString();
+    JSONDB.set("returnPickups", returns);
+  }
+  
+  console.log(`[PULLBACK] OTP Entered: ${otp}`);
+  console.log(`[PULLBACK] Expected OTP: ${wo.pullbackPickupOTP}`);
+  console.log(`[PULLBACK] Verification Success`);
+  console.log(`[PULLBACK] Status Updated To PullbackReturnTransit`);
+  
+  res.json({ success: true, workOrder: wo });
+});
+
+// Store Owner generate Pullback Receipt OTP
+app.post("/api/work-orders/:id/generate-pullback-receipt", (req, res) => {
+  const workOrders = JSONDB.get("workOrders");
+  const idx = workOrders.findIndex((w) => w.WorkOrderId === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Work Order not found." });
+
+  const wo = workOrders[idx];
+  const receiptOTP = Math.floor(100000 + Math.random() * 900000).toString();
+  wo.pullbackReceiptOTP = receiptOTP;
+  wo.pullbackReceiptOTPGeneratedAt = new Date().toISOString();
+  JSONDB.set("workOrders", workOrders);
+
+  res.json({ success: true, receiptOTP });
+});
+
+// Driver verify Pullback Receipt OTP
+app.post("/api/work-orders/:id/verify-pullback-receipt", (req, res) => {
+  const { otp } = req.body;
+  const workOrders = JSONDB.get("workOrders");
+  const idx = workOrders.findIndex((w) => w.WorkOrderId === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Work Order not found." });
+
+  const wo = workOrders[idx];
+  if (wo.pullbackReceiptOTP !== otp) {
+    return res.status(400).json({ error: "Invalid Receipt OTP." });
+  }
+
+  wo.Status = "PulledBack_Received";
+  wo.pullbackReceiptVerifiedAt = new Date().toISOString();
+  JSONDB.set("workOrders", workOrders);
+
+  const returns = JSONDB.get("returnPickups");
+  const retIdx = returns.findIndex((r) => r.WorkOrderId === wo.WorkOrderId);
+  if (retIdx !== -1) {
+    returns[retIdx].Status = "Received";
+    returns[retIdx].ReturnedAt = new Date().toISOString();
+    JSONDB.set("returnPickups", returns);
+  }
+
+  res.json({ success: true, workOrder: wo });
+});
+
+app.post("/api/work-orders/:id/verify-pullback", (req, res) => {
+  const workOrders = JSONDB.get("workOrders");
+  const idx = workOrders.findIndex((w) => w.WorkOrderId === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Work Order not found." });
+
+  const oldWo = workOrders[idx];
+  if (oldWo.Status !== "PulledBack_Received") {
+    return res.status(400).json({ error: "Order must be PulledBack_Received to verify." });
+  }
+
+  oldWo.Status = "PulledBack_Verified";
+  oldWo.pullbackVerifiedAt = new Date().toISOString();
+  JSONDB.set("workOrders", workOrders);
+
+  res.json({ success: true, workOrder: oldWo });
 });
 
 // -------------------------------------------------------------

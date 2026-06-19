@@ -42,19 +42,22 @@ export default function TrackingTimeline({ workOrder, subcontractor, driver }: P
     { label: "In Transit", code: "2_InTransit_ToSubcontractor", desc: "Dispatched with porter driver" },
     { label: "Delivered", code: "3_ReceivedBySubcontractor", desc: "Received at sub-factory" },
     { label: "Processing", code: "4_InProcessAtSubcontractor", desc: "Work in active production" },
-    { label: "Process Completed", code: "4.5_ProcessCompleted", desc: "Production finished, ready for return" },
-    { label: "Return Transit", code: "5_ReturnInTransit", desc: "Returning to company" },
+    { label: workOrder.Status.includes("PulledBack") ? "Ready For Pulled Back Return Pickup" : "Process Completed", code: "4.5_ProcessCompleted", desc: workOrder.Status.includes("PulledBack") ? "Emergency pull back ordered" : "Production finished, ready for return" },
+    { label: workOrder.Status.includes("PulledBack") ? "Pullback Return Transit" : "Return Transit", code: "5_ReturnInTransit", desc: "Returning to company" },
     { label: "At Store", code: "6_ReceivedAtCompanyStore", desc: "Pending store receipt check" },
-    { label: "Completed", code: "7_Completed", desc: "Cleared & Complete" }
+    { label: workOrder.Status.includes("PulledBack") ? "Pullback Verified" : "Completed", code: "7_Completed", desc: "Cleared & Complete" }
   ];
 
   // Determine current active step index
   const getCurrentStepIndex = () => {
-    if (workOrder.Status === "PulledBack") return -1;
-    if (workOrder.Status === "Closed") return steps.length - 1;
-    if (workOrder.Status === "4.6_ReadyForPickup" || workOrder.Status === "4.7_ReturnDriverAssigned") {
+    if (workOrder.Status === "Closed") return 8;
+    if (workOrder.Status === "7_Completed") return 8;
+    if (workOrder.Status === "PulledBack_Verified") return 8;
+    if (workOrder.Status === "4.6_ReadyForPickup" || workOrder.Status === "4.7_ReturnDriverAssigned" || workOrder.Status === "PulledBack_ReadyForPickup" || workOrder.Status === "PulledBack") {
       return steps.findIndex(s => s.code === "4.5_ProcessCompleted");
     }
+    if (workOrder.Status === "PulledBack_ReturnInTransit") return steps.findIndex(s => s.code === "5_ReturnInTransit");
+    if (workOrder.Status === "PulledBack_Received") return steps.findIndex(s => s.code === "6_ReceivedAtCompanyStore");
     return steps.findIndex((s) => s.code === workOrder.Status);
   };
 
@@ -76,15 +79,15 @@ export default function TrackingTimeline({ workOrder, subcontractor, driver }: P
       progressPercentage = 30;
     }
     activeStatusLabel = "Vehicle Transit to Subcontractor Active";
-  } else if (workOrder.Status === "3_ReceivedBySubcontractor" || workOrder.Status === "4_InProcessAtSubcontractor" || workOrder.Status === "4.5_ProcessCompleted" || workOrder.Status === "4.6_ReadyForPickup" || workOrder.Status === "4.7_ReturnDriverAssigned") {
+  } else if (workOrder.Status === "3_ReceivedBySubcontractor" || workOrder.Status === "4_InProcessAtSubcontractor" || workOrder.Status === "4.5_ProcessCompleted" || workOrder.Status === "4.6_ReadyForPickup" || workOrder.Status === "4.7_ReturnDriverAssigned" || workOrder.Status === "PulledBack_ReadyForPickup" || workOrder.Status === "PulledBack") {
     progressPercentage = 100;
-    activeStatusLabel = "Materials Handover Complete";
-  } else if (workOrder.Status === "5_ReturnInTransit") {
+    activeStatusLabel = workOrder.Status.includes("PulledBack") ? "Pulled Back - Waiting for Pickup" : "Materials Handover Complete";
+  } else if (workOrder.Status === "5_ReturnInTransit" || workOrder.Status === "PulledBack_ReturnInTransit") {
     progressPercentage = 60; // returning
     activeStatusLabel = "Return Shipments in Transit";
-  } else if (workOrder.Status === "6_ReceivedAtCompanyStore" || workOrder.Status === "7_Completed") {
+  } else if (workOrder.Status === "6_ReceivedAtCompanyStore" || workOrder.Status === "7_Completed" || workOrder.Status === "PulledBack_Received" || workOrder.Status === "PulledBack_Verified") {
     progressPercentage = 0; // arrived back
-    activeStatusLabel = "Arrived Back at Company Stores";
+    activeStatusLabel = workOrder.Status === "PulledBack_Verified" ? "Verified Pulled Back Items" : "Arrived Back at Company Stores";
   }
 
   return (
@@ -96,34 +99,26 @@ export default function TrackingTimeline({ workOrder, subcontractor, driver }: P
           Production Phase Status Tracker
         </h3>
 
-        {workOrder.Status === "PulledBack" ? (
-          <div className="rounded-xl bg-rose-50 border border-rose-100 p-4 text-center">
-            <AlertTriangle className="h-8 w-8 text-rose-500 mx-auto mb-2" />
-            <h4 className="text-sm font-bold text-rose-800">Garment Work Order Pulled Back</h4>
-            <p className="text-xs text-rose-600 mt-1 max-w-md mx-auto">
-              This order was formally cancelled and recalled. Materials are being rerouted to another subcontractor to preserve timelines.
-            </p>
-          </div>
-        ) : (
-          <div className="relative">
+        <div className="relative w-full overflow-x-auto pb-4 scrollbar-hide">
+          <div className="min-w-[800px] relative px-2">
             {/* Stepper Line background */}
-            <div className="absolute top-5 left-1/2 w-[92%] -translate-x-1/2 h-0.5 bg-slate-100 -z-0 hidden md:block" />
+            <div className="absolute top-5 left-[5%] right-[5%] h-0.5 bg-slate-100 -z-0" />
             
             {/* Stepper Active Highlight */}
             {activeIdx > 0 && (
               <div
-                className="absolute top-5 left-[4%] h-0.5 bg-slate-900 duration-500 -z-0 hidden md:block"
-                style={{ width: `${Math.min(92, (activeIdx / 6) * 92)}%` }}
+                className="absolute top-5 left-[5%] h-0.5 bg-slate-900 duration-500 -z-0"
+                style={{ width: `${Math.min(90, (activeIdx / 7) * 90)}%` }}
               />
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-7 gap-6 relative z-10">
+            <div className="flex justify-between items-start relative z-10 w-full">
               {steps.map((s, idx) => {
                 const isPassed = idx < activeIdx;
                 const isCurrent = idx === activeIdx;
                 
                 return (
-                  <div key={s.code} className="flex md:flex-col items-center gap-4 md:gap-2 text-center md:text-center">
+                  <div key={s.code} className="flex flex-col items-center text-center w-24 shrink-0">
                     <div
                       className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 font-mono text-sm font-bold transition-all ${
                         isPassed
@@ -135,11 +130,11 @@ export default function TrackingTimeline({ workOrder, subcontractor, driver }: P
                     >
                       {idx + 1}
                     </div>
-                    <div className="flex flex-col md:items-center text-left md:text-center">
-                      <span className={`text-[12px] font-bold ${isCurrent ? "text-slate-900" : "text-slate-600"}`}>
+                    <div className="flex flex-col items-center mt-2.5">
+                      <span className={`text-[11px] leading-tight font-bold ${isCurrent ? "text-slate-900" : "text-slate-600"}`}>
                         {s.label}
                       </span>
-                      <span className="text-[10px] text-slate-400 leading-normal hidden md:block max-w-[100px] mx-auto mt-0.5">
+                      <span className="text-[9.5px] text-slate-400 leading-tight mt-1 px-1">
                         {s.desc}
                       </span>
                     </div>
@@ -148,12 +143,11 @@ export default function TrackingTimeline({ workOrder, subcontractor, driver }: P
               })}
             </div>
           </div>
-        )}
+        </div>
       </div>
 
-      {workOrder.Status !== "PulledBack" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Integrated Simulated vector map */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Integrated Simulated vector map */}
           <div className="lg:col-span-2 bg-slate-900 rounded-3xl p-6 shadow-xl relative overflow-hidden flex flex-col justify-between" style={{ minHeight: "260px" }}>
             {/* Matrix Background Effect */}
             <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] opacity-25 -z-0" />
@@ -253,7 +247,6 @@ export default function TrackingTimeline({ workOrder, subcontractor, driver }: P
             )}
           </div>
         </div>
-      )}
     </div>
   );
 }

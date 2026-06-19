@@ -29,6 +29,9 @@ export interface Project {
   CreatedAt: string;
   ApprovedAt?: string;
   ApprovedBy?: string;
+  OrderQuantity?: number | string;
+  QuantityToEnter?: number | string;
+  Priority?: string;
 }
 
 export interface Process {
@@ -66,20 +69,40 @@ export interface WorkOrder {
   TotalQuantity: number;
   Unit: string;
   Status:
+    | "0_AwaitingPulledBackMaterial"
     | "1_ToBeDispatched"
     | "2_InTransit_ToSubcontractor"
     | "3_ReceivedBySubcontractor"
     | "4_InProcessAtSubcontractor"
+    | "4.5_ProcessCompleted"
+    | "4.6_ReadyForPickup"
+    | "4.7_ReturnDriverAssigned"
     | "5_ReturnInTransit"
     | "6_ReceivedAtCompanyStore"
     | "7_Completed"
     | "PulledBack"
+    | "PulledBack_ReadyForPickup"
+    | "PulledBack_ReturnInTransit"
+    | "PulledBack_Received"
+    | "PulledBack_Verified"
     | "Closed";
   DispatchDate?: string;
   ExpectedReturnDate: string;
   ActualReturnDate?: string;
   CreatedBy: string;
   CreatedAt: string;
+  pullbackReason?: string;
+  pullbackRequestedAt?: string;
+  pullbackRequestedBy?: string;
+  pullbackReceivedAt?: string;
+  pullbackVerifiedAt?: string;
+  SubcontractorOTP?: string;
+  pullbackPickupOTP?: string;
+  pullbackPickupOTPGeneratedAt?: string;
+  pullbackPickupVerifiedAt?: string;
+  pullbackReceiptOTP?: string;
+  pullbackReceiptOTPGeneratedAt?: string;
+  pullbackReceiptVerifiedAt?: string;
 }
 
 export interface MaterialDispatch {
@@ -115,12 +138,17 @@ export interface ReturnPickup {
   ReturnId: string;
   WorkOrderId: string;
   DriverId: string;
+  VehicleNumber?: string;
+  Status?: string;
+  GoodsReceiptOTP?: string;
+  PickupOTP?: string;
   PickupDate?: string;
   ReturnedAt?: string;
   CompanyAcknowledgedAt?: string;
   CompanyAcknowledgedBy?: string;
   ReturnQuantity: number;
   ReturnChallanPath?: string;
+  IsPullBack?: boolean;
 }
 
 export interface OTPLog {
@@ -315,30 +343,6 @@ export const INITIAL_DATABASE: DatabaseSchema = {
       Priority: "High",
       ExpectedDeliveryDays: 10,
       Status: "Completed",
-      QCRequired: true
-    },
-    {
-      ProcessId: "proc-2",
-      ProjectId: "proj-1",
-      ProcessName: "Royal Blue Dyeing and Compacting",
-      ProcessType: "Dyeing",
-      ProcessInstruction: "Dyeing deep royal blue with color-fastness rating > 4.5. Stenter drying only.",
-      ProcessOwnerId: "user-5",
-      Priority: "High",
-      ExpectedDeliveryDays: 12,
-      Status: "InProgress",
-      QCRequired: true
-    },
-    {
-      ProcessId: "proc-3",
-      ProjectId: "proj-1",
-      ProcessName: "Double-Stitch Collar Joinery",
-      ProcessType: "Stitching",
-      ProcessInstruction: "Reinforced collar backing stitches, rib neck size 38' to 44'.",
-      ProcessOwnerId: "user-5",
-      Priority: "Medium",
-      ExpectedDeliveryDays: 15,
-      Status: "Pending",
       QCRequired: true
     },
     // Proj 2 planned processes
